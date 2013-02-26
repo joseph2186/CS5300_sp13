@@ -1,0 +1,19 @@
+INDEX VERSION 1.126+/home/joe/LSI/project/CS5300_sp13/assign_1a/.metadata/.plugins/org.eclipse.jdt.core
+2671318549.index
+3469393484.index
+2493350145.index
+489465648.index
+3603968525.index
+1969308547.index
+96627837.index
+2655556453.index
+1967056210.index
+3084996149.index
+870083782.index
+191668555.index
+1601571641.index
+1083721122.index
+3697773125.index
+1483893318.index
+2953559148.index
+3742638761.index
