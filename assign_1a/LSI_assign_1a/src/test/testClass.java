@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -30,6 +32,9 @@ public class testClass extends HttpServlet
 	SimpleDateFormat sdf;
 	PrintWriter pWriter;
 	int i=0;
+	String sessionID = new String();
+	static ConcurrentHashMap<String,String> sessionInfo = new ConcurrentHashMap<>();
+	HashMap SessionTable = new HashMap();
 
 	/**
 	 * 
@@ -70,10 +75,10 @@ public class testClass extends HttpServlet
 
 		// currCookie will be null if the user visits for the first time or has
 		// visited earlier and logged out
-		if(currCookie==null||currCookie.getValue()==null||currCookie.getValue().length()==0)
+		if(currCookie==null||getValueCookie(currCookie)==null||getValueCookie(currCookie).length()==0)
 		{
 			// create the new cookie
-			currCookie=createCookie(resp);
+			currCookie=createCookie(resp, req);
 			// set default text
 			req.setAttribute("New Text","Hello, User!");
 		}
@@ -107,11 +112,11 @@ public class testClass extends HttpServlet
 		{
 			if(doLogout(currCookie,resp))
 			{
-				showFormData(req,currCookie,"Logout Successful!",false);
+				pWriter.print("logout successful");
 			}
 			else
 			{
-				showFormData(req,currCookie,"Logout Failed!",false);
+				showFormData(req,currCookie,"Logout Failed! - try again",false);
 			}
 
 			return;
@@ -145,13 +150,15 @@ public class testClass extends HttpServlet
 			{
 				pWriter.println("<!DOCTYPE html>\n"+"<html>\n"+"<head>\n"+"<title>CS 5300 Project 1A</title>\n"+"</head>\n"+"<body bgcolor=\"#FDF5E6\">\n"+"<FORM ACTION=\"testClass\">\n"+"<fieldset>\n"+"<legend>Project 1A - By gmv33, sc2466, jkb243 - February 23, 2013</legend>\n"+"<h1>"+(currCookie.getValue().split(","))[2]+"</h1>"+"<ul>\n"+"<li>\n"+"<input type=submit name=cmd value=Replace>&nbsp;&nbsp;<input type=text name=NewText size=40 maxlength=512>&nbsp;&nbsp;\n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=Refresh> \n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=LogOut>\n"+"</li>\n"+"</ul>\n"+"</fieldset>\n"+"<p>Server IP and Port is:: "+req.getLocalAddr()+":"+req.getLocalPort()+"</p>\n"+"</FORM>\n"+"</body>\n"+"</html>");
 				pWriter.println("\nExpiration Time: "+(currCookie.getValue().split(","))[3].toString()+"\n");
+				pWriter.println("\nID: "+(currCookie.getValue().split(","))[0].toString()+"\n");
 				pWriter.println(additionalData);
 			}
 		}
 		else
 		{
-			pWriter.println("<!DOCTYPE html>\n"+"<html>\n"+"<head>\n"+"<title>CS 5300 Project 1A</title>\n"+"</head>\n"+"<body bgcolor=\"#FDF5E6\">\n"+"<FORM ACTION=\"testClass\">\n"+"<fieldset>\n"+"<legend>Project 1A - By gmv33, sc2466, jkb243 - February 23, 2013</legend>\n"+"<h1>"+(currCookie.getValue().split(","))[2]+"</h1>"+"<ul>\n"+"<li>\n"+"<input type=submit name=cmd value=Replace>&nbsp;&nbsp;<input type=text name=NewText size=40 maxlength=512>&nbsp;&nbsp;\n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=Refresh> \n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=LogOut>\n"+"</li>\n"+"</ul>\n"+"</fieldset>\n"+"<p>Server IP and Port is:: "+req.getLocalAddr()+":"+req.getLocalPort()+"</p>\n"+"</FORM>\n"+"</body>\n"+"</html>");
-			pWriter.println("\nExpiration Time: "+(currCookie.getValue().split(","))[3].toString());
+			pWriter.println("<!DOCTYPE html>\n"+"<html>\n"+"<head>\n"+"<title>CS 5300 Project 1A</title>\n"+"</head>\n"+"<body bgcolor=\"#FDF5E6\">\n"+"<FORM ACTION=\"testClass\">\n"+"<fieldset>\n"+"<legend>Project 1A - By gmv33, sc2466, jkb243 - February 23, 2013</legend>\n"+"<h1>"+(getValueCookie(currCookie).split(","))[2]+"</h1>"+"<ul>\n"+"<li>\n"+"<input type=submit name=cmd value=Replace>&nbsp;&nbsp;<input type=text name=NewText size=40 maxlength=512>&nbsp;&nbsp;\n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=Refresh> \n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=LogOut>\n"+"</li>\n"+"</ul>\n"+"</fieldset>\n"+"<p>Server IP and Port is:: "+req.getLocalAddr()+":"+req.getLocalPort()+"</p>\n"+"</FORM>\n"+"</body>\n"+"</html>");
+			pWriter.println("\nExpiration Time: "+(getValueCookie(currCookie).split(","))[3].toString());
+			pWriter.println("\nID: "+(getValueCookie(currCookie).split(","))[0].toString());
 		}
 	}
 
@@ -166,7 +173,7 @@ public class testClass extends HttpServlet
 	{
 		try
 		{
-			if(sdf.parse((ckey.getValue().split(","))[3]).before(Calendar.getInstance().getTime()))
+			if(sdf.parse((getValueCookie(ckey).split(","))[3]).before(Calendar.getInstance().getTime()))
 			{
 				return true;
 			}
@@ -188,15 +195,30 @@ public class testClass extends HttpServlet
 	 * @param resp
 	 * @return
 	 */
-	public Cookie createCookie(HttpServletResponse resp)
+	public Cookie createCookie(HttpServletResponse resp, HttpServletRequest req)
 	{
 		cal.add(Calendar.SECOND,60);
-		String cookieValue=session.getId()+",0,"+CONST_STR_DEF_MSG_HELLO_USER+","+cal.getTime().toString()+",US";
-		Cookie ckey=new Cookie("testClassCookie",cookieValue);
+		//String cookieValue=session.getId()+",0,"+CONST_STR_DEF_MSG_HELLO_USER+","+cal.getTime().toString()+",US";
+		String sessionID = getUniqueSessionId(req);
+		String sessionValue=sessionID+",0,"+CONST_STR_DEF_MSG_HELLO_USER+","+cal.getTime().toString()+",US";
+		sessionInfo.put(sessionID,sessionValue);
+		//SessionTable.put(sessionID,sessionValue);
+		Cookie ckey=new Cookie("testClassCookie",sessionID);
 		resp.addCookie(ckey);
 		return ckey;
 	}
 
+	private String getUniqueSessionId(HttpServletRequest req)
+	{
+		String URL = req.getRequestURL().append("?").append( 
+			     req.getQueryString()).toString();
+		return URL+i;
+	}
+
+	private static String getValueCookie(Cookie ckey){
+		String sessionID = ckey.getValue();
+		return sessionInfo.get(sessionID);
+	}
 	/**
 	 * Checks if a cookie for this user exists or not.
 	 * 
@@ -217,12 +239,14 @@ public class testClass extends HttpServlet
 	public void doRefresh(Cookie ckey,HttpServletResponse resp)
 	{
 		cal.add(Calendar.SECOND,60);
-		String cookieValue=ckey.getValue();
-		String[] cookieValArr=cookieValue.split(",");
-		cookieValArr[2]=CONST_STR_DEF_MSG_HELLO_USER;
-		cookieValArr[3]=cal.getTime().toString();
-		cookieValue=getCookieStringFromArray(cookieValArr);
-		ckey.setValue(cookieValue);
+		String sessionVal=getValueCookie(ckey);
+		String[] sessionInfoArr=sessionVal.split(",");
+		sessionInfoArr[2]=CONST_STR_DEF_MSG_HELLO_USER;
+		sessionInfoArr[3]=cal.getTime().toString();
+		sessionVal=getCookieStringFromArray(sessionInfoArr);
+		sessionInfo.remove(ckey.getValue());
+		sessionInfo.put(ckey.getValue(),sessionVal);
+		//ckey.setValue(cookieValue);
 		resp.addCookie(ckey);
 	}
 
@@ -241,10 +265,12 @@ public class testClass extends HttpServlet
 		String textFldValue=req.getParameter("NewText");
 		if(textFldValue!=null&&textFldValue.length()!=0)
 		{
-			String[] cookieValArr=currCookie.getValue().split(",");
-			cookieValArr[2]=textFldValue;
-			String cookieVal=getCookieStringFromArray(cookieValArr);
-			currCookie.setValue(cookieVal);
+			String[] sessionValArr=getValueCookie(currCookie).split(",");
+			sessionValArr[2]=textFldValue;
+			String cookieVal=getCookieStringFromArray(sessionValArr);
+			sessionInfo.remove(currCookie.getValue());
+			sessionInfo.put(currCookie.getValue(),cookieVal);
+			//currCookie.setValue(cookieVal);
 			resp.addCookie(currCookie);
 		}
 	}
@@ -283,7 +309,7 @@ public class testClass extends HttpServlet
 		{
 			Cookie cookie=cookies[i];
 			if(cookieName.equals(cookie.getName()))
-				return (cookie.getValue());
+				return (getValueCookie(cookie));
 		}
 		return null;
 	}
