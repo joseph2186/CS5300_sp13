@@ -31,10 +31,9 @@ public class testClass extends HttpServlet
 	HttpSession session;
 	SimpleDateFormat sdf;
 	PrintWriter pWriter;
-	int i=0;
-	String sessionID = new String();
-	static ConcurrentHashMap<String,String> sessionInfo = new ConcurrentHashMap<>();
-	HashMap SessionTable = new HashMap();
+	static int i=0;
+	String sessionID;
+	static ConcurrentHashMap<String,String> sessionInfo;
 
 	/**
 	 * 
@@ -44,6 +43,8 @@ public class testClass extends HttpServlet
 	public testClass()
 	{
 		sdf=new SimpleDateFormat(CONST_STRING_SDF_FORMAT);
+		sessionID = new String();
+		sessionInfo = new ConcurrentHashMap<>();
 	}
 
 	/**
@@ -61,14 +62,14 @@ public class testClass extends HttpServlet
 		i++;
 		System.out.println("i is :: "+i);
 
+		//to prevent caching - for the issue with back button on browser
+		resp.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
+		resp.setHeader("Pragma","no-cache");
 		// get the latest time instance for each request
 		cal=Calendar.getInstance();
 
 		// get the response writer object
 		pWriter=resp.getWriter();
-
-		// get the httpSession object
-		session=req.getSession(true);
 
 		// Check if a cookie exists
 		Cookie currCookie=checkCookieExists(req);
@@ -77,6 +78,7 @@ public class testClass extends HttpServlet
 		// visited earlier and logged out
 		if(currCookie==null||getValueCookie(currCookie)==null||getValueCookie(currCookie).length()==0)
 		{
+			System.out.println("back after logout!");
 			// create the new cookie
 			currCookie=createCookie(resp, req);
 			// set default text
@@ -148,9 +150,9 @@ public class testClass extends HttpServlet
 			}
 			else
 			{
-				pWriter.println("<!DOCTYPE html>\n"+"<html>\n"+"<head>\n"+"<title>CS 5300 Project 1A</title>\n"+"</head>\n"+"<body bgcolor=\"#FDF5E6\">\n"+"<FORM ACTION=\"testClass\">\n"+"<fieldset>\n"+"<legend>Project 1A - By gmv33, sc2466, jkb243 - February 23, 2013</legend>\n"+"<h1>"+(currCookie.getValue().split(","))[2]+"</h1>"+"<ul>\n"+"<li>\n"+"<input type=submit name=cmd value=Replace>&nbsp;&nbsp;<input type=text name=NewText size=40 maxlength=512>&nbsp;&nbsp;\n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=Refresh> \n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=LogOut>\n"+"</li>\n"+"</ul>\n"+"</fieldset>\n"+"<p>Server IP and Port is:: "+req.getLocalAddr()+":"+req.getLocalPort()+"</p>\n"+"</FORM>\n"+"</body>\n"+"</html>");
-				pWriter.println("\nExpiration Time: "+(currCookie.getValue().split(","))[3].toString()+"\n");
-				pWriter.println("\nID: "+(currCookie.getValue().split(","))[0].toString()+"\n");
+				pWriter.println("<!DOCTYPE html>\n"+"<html>\n"+"<head>\n"+"<title>CS 5300 Project 1A</title>\n"+"</head>\n"+"<body bgcolor=\"#FDF5E6\">\n"+"<FORM ACTION=\"testClass\">\n"+"<fieldset>\n"+"<legend>Project 1A - By gmv33, sc2466, jkb243 - February 23, 2013</legend>\n"+"<h1>"+(getValueCookie(currCookie).split(","))[2]+"</h1>"+"<ul>\n"+"<li>\n"+"<input type=submit name=cmd value=Replace>&nbsp;&nbsp;<input type=text name=NewText size=40 maxlength=512>&nbsp;&nbsp;\n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=Refresh> \n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=LogOut>\n"+"</li>\n"+"</ul>\n"+"</fieldset>\n"+"<p>Server IP and Port is:: "+req.getLocalAddr()+":"+req.getLocalPort()+"</p>\n"+"</FORM>\n"+"</body>\n"+"</html>");
+				pWriter.println("\nExpiration Time: "+(getValueCookie(currCookie).split(","))[3].toString()+"\n");
+				pWriter.println("\nID: "+(getValueCookie(currCookie).split(","))[0].toString()+"\n");
 				pWriter.println(additionalData);
 			}
 		}
@@ -210,9 +212,8 @@ public class testClass extends HttpServlet
 
 	private String getUniqueSessionId(HttpServletRequest req)
 	{
-		String URL = req.getRequestURL().append("?").append( 
-			     req.getQueryString()).toString();
-		return URL+i;
+		String uniqueId = req.getRemoteAddr() +"-"+  cal.getTime().toString();
+		return uniqueId;
 	}
 
 	private static String getValueCookie(Cookie ckey){
@@ -287,6 +288,9 @@ public class testClass extends HttpServlet
 		{
 			ckey.setMaxAge(0);
 			resp.addCookie(ckey);
+			//remove the session id
+			sessionInfo.remove(getValueCookie(ckey));
+			System.out.println("do logout");
 			return true;
 		}
 		catch(Exception e)
