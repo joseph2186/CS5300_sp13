@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<servers>
+  <server auto-publish-setting="2" auto-publish-time="1" configuration-id="/Servers/Tomcat v7.0 Server at localhost-config" deployDir="wtpwebapps" hostname="localhost" id="Tomcat v7.0 Server at localhost" name="Tomcat v7.0 Server at localhost" runtime-id="Apache Tomcat v7.0" server-type="org.eclipse.jst.server.tomcat.70" server-type-id="org.eclipse.jst.server.tomcat.70" start-timeout="45" stop-timeout="15" testEnvironment="true" timestamp="6">
+    <list key="modules" value0="LSI_assign_1a::org.eclipse.jst.jee.server:LSI_assign_1a::jst.web::3.0" value1="LSI_1b::org.eclipse.jst.jee.server:LSI_1b::jst.web::2.5"/>
+  </server>
+  <server auto-publish-setting="2" auto-publish-time="1" configuration-id="/Servers/Tomcat v7.0 Server at localhost (2)-config" deployDir="wtpwebapps" hostname="localhost" id="Tomcat v7.0 Server at localhost (2)" name="Tomcat v7.0 Server at localhost (2)" runtime-id="Apache Tomcat v7.0" server-type="org.eclipse.jst.server.tomcat.70" server-type-id="org.eclipse.jst.server.tomcat.70" start-timeout="45" stop-timeout="15" testEnvironment="true" timestamp="0"/>
+  <server accountId="c9bba137-4d24-408f-b429-bc178f6a6555" applicationDescription="Assign b" applicationName="LSI_Assign_1" auto-publish-setting="1" environmentDescription="" environmentName="Assign1ExecutionEnv" hostname="AWS Elastic Beanstalk - US East (Virginia)" id="Assign1ExecutionEnv at AWS Elastic Beanstalk - US East (Virginia)" incrementalDeployment="true" name="Assign1ExecutionEnv at AWS Elastic Beanstalk - US East (Virginia)" regionId="us-east-1" runtime-id="Apache Tomcat v7.0 in AWS Elastic Beanstalk" server-type="com.amazonaws.eclipse.elasticbeanstalk.servers.tomcat7" server-type-id="com.amazonaws.eclipse.elasticbeanstalk.servers.tomcat7" solutionStack="64bit Amazon Linux running Tomcat 7" start-timeout="600" stop-timeout="800" timestamp="354">
+    <list key="modules" value0="LSI_1b::org.eclipse.jst.jee.server:LSI_1b::jst.web::2.5"/>
+  </server>
+</servers>

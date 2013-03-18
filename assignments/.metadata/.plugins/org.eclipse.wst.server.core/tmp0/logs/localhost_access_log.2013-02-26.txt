@@ -1,0 +1,13 @@
+127.0.0.1 - - [26/Feb/2013:17:46:41 -0500] "GET / HTTP/1.1" 404 955
+127.0.0.1 - - [26/Feb/2013:17:47:13 -0500] "GET /LSI_assign_1a/testclass HTTP/1.1" 404 1024
+127.0.0.1 - - [26/Feb/2013:17:47:13 -0500] "GET /favicon.ico HTTP/1.1" 404 988
+127.0.0.1 - - [26/Feb/2013:17:47:13 -0500] "GET /favicon.ico HTTP/1.1" 404 988
+127.0.0.1 - - [26/Feb/2013:17:47:27 -0500] "GET /LSI_assign_1a/testClass HTTP/1.1" 200 607
+127.0.0.1 - - [26/Feb/2013:17:47:33 -0500] "GET /LSI_assign_1a/testClass?cmd=Replace&NewText=joe HTTP/1.1" 200 599
+127.0.0.1 - - [26/Feb/2013:17:47:36 -0500] "GET /LSI_assign_1a/testClass?NewText=&cmd=Refresh HTTP/1.1" 200 607
+127.0.0.1 - - [26/Feb/2013:17:47:37 -0500] "GET /LSI_assign_1a/testClass?NewText=&cmd=Refresh HTTP/1.1" 200 607
+127.0.0.1 - - [26/Feb/2013:17:47:39 -0500] "GET /LSI_assign_1a/testClass?NewText=&cmd=Refresh HTTP/1.1" 200 607
+127.0.0.1 - - [26/Feb/2013:17:47:39 -0500] "GET /LSI_assign_1a/testClass?NewText=&cmd=Refresh HTTP/1.1" 200 607
+127.0.0.1 - - [26/Feb/2013:17:47:42 -0500] "GET /LSI_assign_1a/testClass?NewText=&cmd=LogOut HTTP/1.1" 200 627
+127.0.0.1 - - [26/Feb/2013:23:07:03 -0500] "GET /LSI_assign_1a/testClass HTTP/1.1" 200 607
+127.0.0.1 - - [26/Feb/2013:23:07:06 -0500] "GET /LSI_assign_1a/testClass?NewText=&cmd=LogOut HTTP/1.1" 200 17

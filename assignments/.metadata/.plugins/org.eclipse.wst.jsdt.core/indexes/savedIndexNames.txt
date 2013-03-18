@@ -1,0 +1,6 @@
+INDEX VERSION 1.122+/home/joe/LSI/project/CS5300_sp13/assign_1a/.metadata/.plugins/org.eclipse.wst.jsdt.core/indexes
+2219633128.index
+3762021515.index
+1202557179.index
+3500407272.index
+1034616710.index

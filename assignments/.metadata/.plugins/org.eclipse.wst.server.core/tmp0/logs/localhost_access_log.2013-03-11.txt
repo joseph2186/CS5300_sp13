@@ -1,0 +1,14 @@
+127.0.0.1 - - [11/Mar/2013:21:15:34 -0400] "GET / HTTP/1.1" 404 955
+127.0.0.1 - - [11/Mar/2013:21:15:49 -0400] "GET /LSI_1b/ HTTP/1.1" 200 1012
+127.0.0.1 - - [11/Mar/2013:21:15:49 -0400] "GET /LSI_1b/styles/styles.css HTTP/1.1" 200 2016
+127.0.0.1 - - [11/Mar/2013:21:15:50 -0400] "GET /LSI_1b/images/drive.png HTTP/1.1" 200 724
+127.0.0.1 - - [11/Mar/2013:21:15:51 -0400] "GET /LSI_1b/images/database.png HTTP/1.1" 200 753
+127.0.0.1 - - [11/Mar/2013:21:15:51 -0400] "GET /LSI_1b/images/server.png HTTP/1.1" 200 662
+127.0.0.1 - - [11/Mar/2013:21:15:51 -0400] "GET /favicon.ico HTTP/1.1" 404 988
+127.0.0.1 - - [11/Mar/2013:21:15:59 -0400] "GET /LSI_1b/sessionManagement HTTP/1.1" 404 1027
+127.0.0.1 - - [11/Mar/2013:21:16:55 -0400] "GET /LSI_1b/default HTTP/1.1" 404 997
+127.0.0.1 - - [11/Mar/2013:21:16:59 -0400] "GET /LSI_1b/default.html HTTP/1.1" 404 1012
+127.0.0.1 - - [11/Mar/2013:21:19:51 -0400] "GET /LSI_assign_1a/testClass HTTP/1.1" 404 1024
+127.0.0.1 - - [11/Mar/2013:21:20:01 -0400] "GET /LSI_1b/sessionManagement HTTP/1.1" 404 1027
+127.0.0.1 - - [11/Mar/2013:21:21:17 -0400] "GET / HTTP/1.1" 404 955
+127.0.0.1 - - [11/Mar/2013:21:21:26 -0400] "GET /LSI_1b/sessionManagement HTTP/1.1" 200 595

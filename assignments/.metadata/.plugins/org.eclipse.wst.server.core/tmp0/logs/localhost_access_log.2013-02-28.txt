@@ -1,0 +1,13 @@
+127.0.0.1 - - [28/Feb/2013:22:43:40 -0500] "GET / HTTP/1.1" 404 955
+127.0.0.1 - - [28/Feb/2013:22:43:43 -0500] "GET /LSI_Project1A/sessionManagement HTTP/1.1" 200 595
+127.0.0.1 - - [28/Feb/2013:22:44:00 -0500] "GET /LSI_assign_1a/sessionManagement HTTP/1.1" 404 1048
+127.0.0.1 - - [28/Feb/2013:22:44:10 -0500] "GET /LSI_assign1A/sessionManagement HTTP/1.1" 404 1045
+127.0.0.1 - - [28/Feb/2013:22:44:25 -0500] "GET /LSI_Project1A/sessionManagement HTTP/1.1" 200 595
+127.0.0.1 - - [28/Feb/2013:22:44:42 -0500] "GET /LSI_Project1A/sessionManagement?cmd=Replace&NewText=joseph HTTP/1.1" 200 590
+127.0.0.1 - - [28/Feb/2013:22:47:07 -0500] "GET / HTTP/1.1" 404 955
+127.0.0.1 - - [28/Feb/2013:22:47:09 -0500] "GET /LSI_Project1A_1/sessionManagement HTTP/1.1" 200 595
+127.0.0.1 - - [28/Feb/2013:22:47:14 -0500] "GET /LSI_Project1A/sessionManagement HTTP/1.1" 404 1048
+127.0.0.1 - - [28/Feb/2013:22:47:19 -0500] "GET /LSI_Project1A_1/sessionManagement HTTP/1.1" 200 595
+127.0.0.1 - - [28/Feb/2013:22:47:29 -0500] "GET /LSI_Project1A_1/sessionManagement?cmd=Replace&NewText=joseph HTTP/1.1" 200 590
+127.0.0.1 - - [28/Feb/2013:22:47:49 -0500] "GET /LSI_Project1A_1/sessionManagement?NewText=&cmd=Refresh HTTP/1.1" 200 595
+127.0.0.1 - - [28/Feb/2013:22:47:52 -0500] "GET /LSI_Project1A_1/sessionManagement?NewText=&cmd=LogOut HTTP/1.1" 200 18

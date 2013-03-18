@@ -1,0 +1,3 @@
+INDEX VERSION 1.126
+/home/joe/LSI/project/CS5300_sp13/assign_1a/.metadata/.plugins/org.eclipse.jst.jsp.core/jspsearch/1358898212.index
+/LSI_1b/src
