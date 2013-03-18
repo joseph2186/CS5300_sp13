@@ -43,7 +43,7 @@ public class SessionManagement extends HttpServlet
 	 */
 	public SessionManagement()
 	{
-		sessionInfo=new ConcurrentHashMap<>();
+		sessionInfo=new ConcurrentHashMap<String, String>();
 
 		// instantiate the daemon thread for session table cleanup
 		new Thread(new Runnable()
