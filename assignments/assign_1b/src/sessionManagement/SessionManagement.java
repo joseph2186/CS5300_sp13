@@ -13,6 +13,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletException;
@@ -26,14 +27,9 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet("/sessionManagement")
 public class SessionManagement extends HttpServlet
 {
-	// milliseconds
-	private static final int CONST_LONG_DAEMON_RUN_FREQ=50000;
-	private static final String CONST_STR_COOKIE_NAME="CS5300PROJ1SESSION";
-	// seconds
-	private static final int CONST_INT_SESSION_TIMEOUT_VAL=60;
-	private static final String CONST_STR_DEF_MSG_HELLO_USER="Hello User!";
-	private static final String CONST_STRING_SDF_FORMAT="EEE MMM dd HH:mm:ss zzz yyyy";
-	static Map<String,String> sessionInfo;
+	protected ServerSingleton serverInstance = null;
+	private SessionCleaner _sessionCleaner = null;
+	private RpcServerStub _serverStub = null;
 
 	/**
 	 * 
@@ -43,54 +39,22 @@ public class SessionManagement extends HttpServlet
 	 */
 	public SessionManagement()
 	{
-		sessionInfo=new ConcurrentHashMap<String, String>();
-
+		serverInstance = ServerSingleton.getInstance();
+		
 		// instantiate the daemon thread for session table cleanup
-		new Thread(new Runnable()
-		{
-			public void run()
-			{
-				while(true)
-				{
-					Calendar cal=Calendar.getInstance();
-					Date timeVal=new Date();
-					for(Entry<String,String> cMapEntrySet : sessionInfo.entrySet())
-					{
-						String sessionValue=cMapEntrySet.getValue();
-						SimpleDateFormat sdf=new SimpleDateFormat(CONST_STRING_SDF_FORMAT);
-
-						if(sessionValue!=null&&sessionValue.length()!=0)
-						{
-							try
-							{
-								timeVal=sdf.parse(sessionValue.split(",")[3]);
-								if(timeVal.before(cal.getTime()))
-								{
-									System.out.println("Value deleted by Daemon Thread from Session Table :: "+cMapEntrySet.getKey());
-									((ConcurrentHashMap<String,String>)sessionInfo).remove(cMapEntrySet.getKey());
-								}
-							}
-							catch(ParseException e1)
-							{
-								e1.printStackTrace();
-							}
-						}
-						else
-						{
-							((ConcurrentHashMap<String,String>)sessionInfo).remove(cMapEntrySet.getKey());
-						}
-					}
-					try
-					{
-						Thread.sleep(CONST_LONG_DAEMON_RUN_FREQ);
-					}
-					catch(InterruptedException e)
-					{
-						e.printStackTrace();
-					}
-				}
-			}
-		}).start();
+		_sessionCleaner = new SessionCleaner();
+		_sessionCleaner.run();
+		
+		_serverStub = RpcServerStub.getInstance(serverInstance);
+		//Initialize the callID
+		if(serverInstance.get_callId() == 0)
+			serverInstance.set_callId(Integer.parseInt(_serverStub.get_rpcSocket().toString())*10000);
+		
+		//Get the rpc socket
+		serverInstance.setRpcSocket(_serverStub.get_rpcSocket());
+		
+		_serverStub.run();
+		
 	}
 
 	/**
@@ -108,6 +72,7 @@ public class SessionManagement extends HttpServlet
 		// to prevent caching - for the issue with back button on browser
 		resp.setHeader("Cache-Control","private, no-store, no-cache, must-revalidate");
 		resp.setHeader("Pragma","no-cache");
+		resp.setContentType("text/html");
 
 		// Check if a cookie exists
 		Cookie currCookie=checkCookieExists(req);
@@ -141,15 +106,15 @@ public class SessionManagement extends HttpServlet
 
 			return;
 		}
-		
+
 		// client reopens expired session in browser
-		if(cookieExpired && req.getParameter("cmd")==null)
+		if(cookieExpired&&req.getParameter("cmd")==null)
 		{
 			String newSessionID=createSessionState(req);
 			currCookie.setValue(newSessionID);
 			resp.addCookie(currCookie);
 		}
-		
+
 		// Replace request
 		if(req.getParameter("cmd")!=null&&req.getParameter("cmd").equalsIgnoreCase("Replace"))
 		{
@@ -248,7 +213,7 @@ public class SessionManagement extends HttpServlet
 	{
 		try
 		{
-			SimpleDateFormat sdf=new SimpleDateFormat(CONST_STRING_SDF_FORMAT);
+			SimpleDateFormat sdf=new SimpleDateFormat(ServerSingleton.CONST_STRING_SDF_FORMAT);
 			String sessionVal=getSessionValue(ckey);
 			if(sessionVal==null||sdf.parse((sessionVal.split(","))[3]).before(Calendar.getInstance().getTime()))
 			{
@@ -275,7 +240,10 @@ public class SessionManagement extends HttpServlet
 	public Cookie createCookie(HttpServletResponse resp,HttpServletRequest req)
 	{
 		String sessionID=createSessionState(req);
-		Cookie ckey=new Cookie(CONST_STR_COOKIE_NAME,sessionID);
+		//TODO: write apis to parse the data
+		//TODO: need to get the backup and primary IPPs
+		String cookieValue = sessionID+","+"0"+","+getIPP(req);
+		Cookie ckey=new Cookie(ServerSingleton.CONST_STR_COOKIE_NAME,cookieValue);
 		resp.addCookie(ckey);
 		return ckey;
 	}
@@ -288,24 +256,55 @@ public class SessionManagement extends HttpServlet
 	protected String createSessionState(HttpServletRequest req)
 	{
 		Calendar cal=Calendar.getInstance();
-		cal.add(Calendar.SECOND,CONST_INT_SESSION_TIMEOUT_VAL);
+		cal.add(Calendar.SECOND, ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
 		String sessionID=getUniqueSessionId(req);
-		String sessionValue=sessionID+",1,"+CONST_STR_DEF_MSG_HELLO_USER+","+cal.getTime().toString()+",US";
-		sessionInfo.put(sessionID,sessionValue);
+		String location=getLocationInfo(req);
+		String sessionValue=sessionID+",1,"+ServerSingleton.CONST_STR_DEF_MSG_HELLO_USER+","+cal.getTime().toString()+","+location;
+		serverInstance.sessionInfo.put(sessionID,sessionValue);
 		return sessionID;
+	}
+
+	/**
+	 * returns the location info
+	 * 
+	 * @return
+	 */
+	private String getLocationInfo(HttpServletRequest req)
+	{
+		// TODO: figure out how to get these values
+		String IPPprimary=getIPP(req);
+		String IPPbackup=null;
+		return IPPprimary+","+IPPbackup;
+	}
+
+	/**
+	 * get the IPP - IP and port string
+	 * 
+	 * @return
+	 */
+	private String getIPP(HttpServletRequest req)
+	{
+		String IPP = null;
+		IPP = req.getLocalAddr()+","+req.getLocalPort();
+
+		return IPP;
 	}
 
 	private String getUniqueSessionId(HttpServletRequest req)
 	{
 		Calendar cal=Calendar.getInstance();
-		String uniqueId=req.getRemoteAddr()+"-"+cal.getTime().toString();
+		//TODO: Need to check for the synchronization for the session number increment access
+		int sessionNumber = serverInstance.get_sessionNumber();
+		sessionNumber = sessionNumber + 1;
+		String uniqueId= sessionNumber+","+getIPP(req);
+		serverInstance.set_sessionNumber(sessionNumber);
 		return uniqueId;
 	}
 
-	private static String getSessionValue(Cookie ckey)
+	private String getSessionValue(Cookie ckey)
 	{
 		String sessionID=ckey.getValue();
-		return sessionInfo.get(sessionID);
+		return serverInstance.getSessionInfo().get(sessionID);
 	}
 
 	/**
@@ -316,7 +315,7 @@ public class SessionManagement extends HttpServlet
 	 */
 	public Cookie checkCookieExists(HttpServletRequest req)
 	{
-		return getCookieFromSession(req,CONST_STR_COOKIE_NAME);
+		return getCookieFromSession(req,ServerSingleton.CONST_STR_COOKIE_NAME);
 	}
 
 	/**
@@ -328,14 +327,14 @@ public class SessionManagement extends HttpServlet
 	public void doRefresh(Cookie ckey,HttpServletResponse resp)
 	{
 		Calendar cal=Calendar.getInstance();
-		cal.add(Calendar.SECOND,CONST_INT_SESSION_TIMEOUT_VAL);
+		cal.add(Calendar.SECOND,ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
 		String sessionVal=getSessionValue(ckey);
 		String[] sessionInfoArr=sessionVal.split(",");
-		sessionInfoArr[2]=CONST_STR_DEF_MSG_HELLO_USER;
+		sessionInfoArr[2] = ServerSingleton.CONST_STR_DEF_MSG_HELLO_USER;
 		sessionInfoArr[3]=cal.getTime().toString();
 		sessionVal=getCookieStringFromArray(sessionInfoArr);
 		// sessionInfo.remove(ckey.getValue());
-		sessionInfo.put(ckey.getValue(),sessionVal);
+		serverInstance.sessionInfo.put(ckey.getValue(),sessionVal);
 		// ckey.setValue(cookieValue);
 		resp.addCookie(ckey);
 	}
@@ -351,13 +350,13 @@ public class SessionManagement extends HttpServlet
 		Calendar cal=Calendar.getInstance();
 		if(textFldValue!=null&&textFldValue.length()!=0)
 		{
-			cal.add(Calendar.SECOND,CONST_INT_SESSION_TIMEOUT_VAL);
+			cal.add(Calendar.SECOND, ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
 			String[] sessionValArr=getSessionValue(currCookie).split(",");
 			sessionValArr[2]=textFldValue;
 			sessionValArr[3]=cal.getTime().toString();
 			String cookieVal=getCookieStringFromArray(sessionValArr);
-			sessionInfo.remove(currCookie.getValue());
-			sessionInfo.put(currCookie.getValue(),cookieVal);
+			serverInstance.sessionInfo.remove(currCookie.getValue());
+			serverInstance.sessionInfo.put(currCookie.getValue(),cookieVal);
 			// currCookie.setValue(cookieVal);
 			resp.addCookie(currCookie);
 		}
@@ -377,7 +376,7 @@ public class SessionManagement extends HttpServlet
 			resp.addCookie(ckey);
 			// remove the session id
 			if(getSessionValue(ckey)!=null&&getSessionValue(ckey).length()!=0)
-				sessionInfo.remove(getSessionValue(ckey));
+				serverInstance.sessionInfo.remove(getSessionValue(ckey));
 			return true;
 		}
 		catch(Exception e)
@@ -394,7 +393,7 @@ public class SessionManagement extends HttpServlet
 	 * @param cookieName
 	 * @return
 	 */
-	public static String getCookieValue(Cookie[] cookies,String cookieName)
+	public String getCookieValue(Cookie[] cookies,String cookieName)
 	{
 		for(int i=0;i<cookies.length;i++)
 		{
@@ -461,12 +460,12 @@ public class SessionManagement extends HttpServlet
 	protected void setVersionID(HttpServletRequest req,Cookie cookie)
 	{
 		String sessionID=cookie.getValue();
-		String sessionVal=sessionInfo.get(sessionID);
+		String sessionVal=serverInstance.sessionInfo.get(sessionID);
 		if(sessionVal!=null&&sessionVal.length()!=0)
 		{
 			String[] sessionValArr=sessionVal.split(",");
 			sessionValArr[1]=String.valueOf((Integer.parseInt(sessionValArr[1])+1));
-			sessionInfo.put(sessionID,getCookieStringFromArray(sessionValArr));
+			serverInstance.sessionInfo.put(sessionID,getCookieStringFromArray(sessionValArr));
 		}
 	}
 }
