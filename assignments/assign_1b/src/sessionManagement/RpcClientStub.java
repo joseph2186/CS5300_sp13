@@ -11,7 +11,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class RpcClientStub extends Thread
+public class RpcClientStub
 {
 	private DatagramPacket _sendPkt=null;
 	private DatagramPacket _recvPkt=null;
@@ -30,8 +30,7 @@ public class RpcClientStub extends Thread
 		_rpcSocket=rpcSocket;
 	}
 
-	@Override
-	public void run()
+	public void RpcClientStubHandler()
 	{
 		ByteArrayOutputStream bos=null;
 		ByteArrayInputStream bis=null;
