@@ -41,6 +41,7 @@ public class SessionManagement extends HttpServlet
 //		_sessionCleaner.start();
 		
 		_serverStub = RpcServerStub.getInstance(serverInstance);
+		
 		//Initialize the callID
 		if(serverInstance.get_callId() == 0)
 			serverInstance.set_callId(_serverStub.get_rpcSocket().getLocalPort()*10000);
@@ -67,9 +68,10 @@ public class SessionManagement extends HttpServlet
 		// to prevent caching - for the issue with back button on browser
 		resp.setHeader("Cache-Control","private, no-store, no-cache, must-revalidate");
 		resp.setHeader("Pragma","no-cache");
+		// set the content type for the page to get rendered as HTML
 		resp.setContentType("text/html");
 
-		// Check if a cookie exists
+		// Check if a cookie exists - returns null on not finding
 		Cookie currCookie=checkCookieExists(req);
 
 		// currCookie will be null if the user visits for the first time or has
@@ -237,7 +239,13 @@ public class SessionManagement extends HttpServlet
 		String sessionID=createSessionState(req);
 		//TODO: write apis to parse the data
 		//TODO: need to get the backup and primary IPPs
-		String cookieValue = sessionID+","+"0"+","+getIPP(req);
+		
+		//Cookie value - sessionID_version_location
+		String location=getLocationInfo(req);
+		
+		//initial value of version is 0
+		String cookieValue = sessionID+"_"+"0"+"_"+location;
+		
 		Cookie ckey=new Cookie(ServerSingleton.CONST_STR_COOKIE_NAME,cookieValue);
 		resp.addCookie(ckey);
 		return ckey;
@@ -252,9 +260,13 @@ public class SessionManagement extends HttpServlet
 	{
 		Calendar cal=Calendar.getInstance();
 		cal.add(Calendar.SECOND, ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
+		//Session ID is now session ID and IPP pair
 		String sessionID=getUniqueSessionId(req);
-		String location=getLocationInfo(req);
-		String sessionValue=sessionID+",1,"+ServerSingleton.CONST_STR_DEF_MSG_HELLO_USER+","+cal.getTime().toString()+","+location;
+		sessionID += "_"+getIPP(req);
+		
+		
+		
+		String sessionValue=sessionID+",1,"+ServerSingleton.CONST_STR_DEF_MSG_HELLO_USER+","+cal.getTime().toString();
 		serverInstance.sessionInfo.put(sessionID,sessionValue);
 		return sessionID;
 	}
@@ -267,9 +279,19 @@ public class SessionManagement extends HttpServlet
 	private String getLocationInfo(HttpServletRequest req)
 	{
 		// TODO: figure out how to get these values
-		String IPPprimary=getIPP(req);
-		String IPPbackup=null;
-		return IPPprimary+","+IPPbackup;
+		String IPPprimary = "";
+		String IPPbackup = "";
+		IPPprimary=getIPP(req);
+		if (serverInstance.getMbrSet() == null)
+			IPPbackup=null;
+		else
+		{
+			//send a request to a random server in the mberset and make it the
+			//backup server for this session
+		
+			//TODO: call the client handler to send a write request
+		}
+		return IPPprimary+"_"+IPPbackup;
 	}
 
 	/**
@@ -402,13 +424,14 @@ public class SessionManagement extends HttpServlet
 	/**
 	 * This method returns the cookie from the http request object
 	 * 
+	 * The method returns a null on not finding a cookie
 	 * @param req
 	 * @param cookieName
 	 * @return
 	 */
 	public static Cookie getCookieFromSession(HttpServletRequest req,String cookieName)
 	{
-		if(req.getCookies()!=null&&req.getCookies().length>0)
+		if(req.getCookies()!=null && req.getCookies().length>0)
 		{
 			for(Cookie ckey : req.getCookies())
 			{

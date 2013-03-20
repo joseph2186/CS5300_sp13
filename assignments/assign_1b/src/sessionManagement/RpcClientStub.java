@@ -48,10 +48,12 @@ public class RpcClientStub
 			inBuf.setCallId(_callId);
 			inBuf.setOpCode(_opCode);
 			inBuf.setData(_data);
+			
 			out=new ObjectOutputStream(bos);
 			out.writeObject(inBuf);
 			outBufBytes=bos.toByteArray();
 
+			// the ippList is populated as string pairs IP_Port
 			for(int i=0;i<_ippList.length;i=i+2)
 			{
 				_sendPkt=new DatagramPacket(outBufBytes,outBufBytes.length,InetAddress.getByName(_ippList[i]),Integer.parseInt(_ippList[i+1]));

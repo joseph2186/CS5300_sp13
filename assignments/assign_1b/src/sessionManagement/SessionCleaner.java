@@ -19,7 +19,7 @@ public class SessionCleaner extends Thread
 	@Override
 	public void run()
 	{
-		//TODO Auto-generated method stub
+		//TODO: add the functionality for the discard time logic
 		while(true)
 		{
 			Calendar cal=Calendar.getInstance();
@@ -52,7 +52,7 @@ public class SessionCleaner extends Thread
 			}
 			try
 			{
-				Thread.sleep(ServerSingleton.CONST_LONG_DAEMON_RUN_FREQ);
+				this.sleep(ServerSingleton.CONST_LONG_DAEMON_RUN_FREQ);
 			}
 			catch(InterruptedException e)
 			{
