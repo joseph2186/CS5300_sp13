@@ -43,17 +43,17 @@ public class SessionManagement extends HttpServlet
 		
 		// instantiate the daemon thread for session table cleanup
 		_sessionCleaner = new SessionCleaner();
-		_sessionCleaner.run();
+//		_sessionCleaner.start();
 		
 		_serverStub = RpcServerStub.getInstance(serverInstance);
 		//Initialize the callID
 		if(serverInstance.get_callId() == 0)
-			serverInstance.set_callId(Integer.parseInt(_serverStub.get_rpcSocket().toString())*10000);
+			serverInstance.set_callId(_serverStub.get_rpcSocket().getLocalPort()*10000);
 		
 		//Get the rpc socket
 		serverInstance.setRpcSocket(_serverStub.get_rpcSocket());
 		
-		_serverStub.run();
+		_serverStub.start();
 		
 	}
 
