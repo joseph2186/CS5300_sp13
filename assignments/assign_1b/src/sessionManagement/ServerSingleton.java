@@ -23,6 +23,10 @@ public class ServerSingleton
 
 	private static int _sessionNumber=0;
 	private static int _callId=0;
+	
+	//time constants in msec
+	public static int CONST_DELTA_TIMEOUT_VAL = 200;
+	public static int CONST_GAMMA_TIMEOUT_VAL = 100;
 
 	private static DatagramSocket rpcSocket=null;
 

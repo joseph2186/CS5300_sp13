@@ -96,8 +96,8 @@ public class SessionManagement extends HttpServlet
 		sessionManager(currCookie,req,resp,sessionInfo);
 
 	}
-	
-	//TODO: need to add the discard time logic everywhere
+
+	// TODO: need to add the discard time logic everywhere
 
 	private void sessionManager(Cookie cookie,HttpServletRequest req,HttpServletResponse resp,String[] sessionInfo)
 	{
@@ -105,6 +105,18 @@ public class SessionManagement extends HttpServlet
 		// output[0] - found version
 		// output[1] - message
 		// output[2] - expiry time
+
+		// If sessionInfo was returned null then the session is invalid - return
+		// a error
+		if(sessionInfo==null)
+		{
+			// remove the cookie - similar to dologout()
+			ServerSingleton.mbrSet.remove(Util.getPrimaryIpp(cookie));
+			ServerSingleton.mbrSet.remove(Util.getBackupIpp(cookie));
+			doLogout(cookie,resp);
+			showFormData(req,cookie,"Session failed!",true,resp);
+			return;
+		}
 
 		// update the local session table
 		serverInstance.sessionInfoCMap.put(Util.getSessionId(cookie),Util.combine(sessionInfo));
@@ -180,7 +192,7 @@ public class SessionManagement extends HttpServlet
 		int i=0;
 		String response="";
 		String[] ippBackup=new String[2];
-		String data=newSessionID+"_"+Util.combine(sessionInfo);
+		String data=newSessionID+Util.DELIM+Util.combine(sessionInfo);
 		do
 		{
 			if(i<ServerSingleton.mbrSet.size())
@@ -201,6 +213,7 @@ public class SessionManagement extends HttpServlet
 		}
 		while(response.equalsIgnoreCase(Util.NACK));
 
+		// Case when none of the known servers responded to the backup request
 		if(response==null||response.equalsIgnoreCase(Util.NACK))
 		{
 			// set the ipp backup to NULL
@@ -221,14 +234,20 @@ public class SessionManagement extends HttpServlet
 		String sessionId=Util.getSessionId(currCookie);
 		String[] ippList=Util.getIppList(currCookie);
 		String version=Util.getVersionNumber(currCookie);
-		String data=sessionId+"_"+version;
+		String data=sessionId+Util.DELIM+version;
 
 		// Check if the IPP in the cookie is not equal to the servers IPP
 		if(!Util.isIppMine(currCookie,getIPP(req)))
 		{
 			// update the mbrset
-			serverInstance.mbrSet.add(Util.getPrimaryIpp(currCookie));
-			serverInstance.mbrSet.add(Util.getBackupIpp(currCookie));
+			if(!ServerSingleton.mbrSet.contains(Util.getPrimaryIpp(currCookie)))
+			{
+				serverInstance.mbrSet.add(Util.getPrimaryIpp(currCookie));
+			}
+			if(!ServerSingleton.mbrSet.contains(Util.getBackupIpp(currCookie)))
+			{
+				serverInstance.mbrSet.add(Util.getBackupIpp(currCookie));
+			}
 
 			int callId=serverInstance.getNextCallId();
 
@@ -239,8 +258,9 @@ public class SessionManagement extends HttpServlet
 
 			if(sessionInfo==null)
 			{
-				// Error!!!!
-				// TODO : What to do???
+				// Error: could not fetch the session info from both the primary
+				// as well as the backup
+				// Return a timeout and delets the cookie
 
 			}
 
@@ -276,8 +296,7 @@ public class SessionManagement extends HttpServlet
 				if(prefixSuffix)
 				{
 					pWriter.println(additionalData);
-					// pWriter.print("<!DOCTYPE html>\n"+"<html>\n"+"<head>\n"+"<title>CS 5300 Project 1A</title>\n"+"</head>\n"+"<body bgcolor=\"#FDF5E6\">\n"+"<FORM ACTION=\"sessionManagement\">\n"+"<fieldset>\n"+"<legend>Project 1A - By gmv33, sc2466, jkb243</legend>\n"+"<h1>"+(currCookie.getValue().split(","))[2]+"</h1>"+"<ul>\n"+"<li>\n"+"<input type=submit name=cmd value=Replace>&nbsp;&nbsp;<input type=text name=NewText size=40 maxlength=512>&nbsp;&nbsp;\n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=Refresh> \n"+"</li>\n"+"<li>\n"+"<input type=submit name=cmd value=LogOut>\n"+"</li>\n"+"</ul>\n"+"</fieldset>\n"+"<p>Server IP and Port is:: "+req.getLocalAddr()+":"+req.getLocalPort()+"</p>\n"+"</FORM>\n"+"</body>\n"+"</html>");
-					// pWriter.print("\nExpiration Time: "+(currCookie.getValue().split(","))[3].toString());
+
 				}
 				else
 				{
@@ -354,7 +373,7 @@ public class SessionManagement extends HttpServlet
 		String location=getIPP(req);
 
 		// initial value of version is 0
-		String cookieValue=sessionID+"_"+"0"+"_"+location;
+		String cookieValue=sessionID+Util.DELIM+"0"+Util.DELIM+location;
 
 		Cookie cookie=new Cookie(ServerSingleton.CONST_STR_COOKIE_NAME,cookieValue);
 
@@ -372,15 +391,18 @@ public class SessionManagement extends HttpServlet
 	protected String createSessionState(HttpServletRequest req)
 	{
 		// TODO: change all the _ to ._
-		Calendar cal=Calendar.getInstance();
-		cal.add(Calendar.SECOND,ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
+		Calendar calTimeOut=Calendar.getInstance();
+		calTimeOut.add(Calendar.SECOND,ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
+
+		Calendar calDiscardTime=Calendar.getInstance();
+		calDiscardTime.add(Calendar.SECOND,(2*ServerSingleton.CONST_DELTA_TIMEOUT_VAL+ServerSingleton.CONST_GAMMA_TIMEOUT_VAL));
 
 		// Session ID is now session ID and IPP pair
 		String sessionID="";
 		int sessionNumber=serverInstance.getNextSessionNumber();
-		sessionID=sessionNumber+"_"+getIPP(req);
+		sessionID=sessionNumber+Util.DELIM+getIPP(req);
 
-		String sessionValue="0"+"_"+ServerSingleton.CONST_STR_DEF_MSG_HELLO_USER+"_"+cal.getTime().toString();
+		String sessionValue="0"+Util.DELIM+ServerSingleton.CONST_STR_DEF_MSG_HELLO_USER+Util.DELIM+calTimeOut.getTime().toString()+Util.DELIM+calDiscardTime.getTime().toString();
 		serverInstance.sessionInfoCMap.put(sessionID,sessionValue);
 		return sessionID;
 	}
@@ -430,14 +452,19 @@ public class SessionManagement extends HttpServlet
 	 */
 	public void doRefresh(Cookie cookie,HttpServletResponse resp)
 	{
-		Calendar cal=Calendar.getInstance();
-		cal.add(Calendar.SECOND,ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
+		Calendar calTimeOut=Calendar.getInstance();
+		calTimeOut.add(Calendar.SECOND,ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
+
+		Calendar calDiscardTime=Calendar.getInstance();
+		calDiscardTime.add(Calendar.SECOND,(2*ServerSingleton.CONST_DELTA_TIMEOUT_VAL+ServerSingleton.CONST_GAMMA_TIMEOUT_VAL));
+
 		String sessionVal=getSessionValue(cookie);
-		
+
 		String[] sessionInfoArr=Util.tokenize(sessionVal);
 		sessionInfoArr[Util.MESSAGE]=ServerSingleton.CONST_STR_DEF_MSG_HELLO_USER;
-		sessionInfoArr[Util.EXPIRATION_TIME]=cal.getTime().toString();
-		
+		sessionInfoArr[Util.EXPIRATION_TIME]=calTimeOut.getTime().toString();
+		sessionInfoArr[Util.DISCARD_TIME]=calDiscardTime.getTime().toString();
+
 		sessionVal=Util.combine(sessionInfoArr);
 
 		serverInstance.sessionInfoCMap.put(cookie.getValue(),sessionVal);
@@ -453,18 +480,22 @@ public class SessionManagement extends HttpServlet
 	public void doReplace(HttpServletRequest req,Cookie currCookie,HttpServletResponse resp)
 	{
 		String text=req.getParameter("NewText");
-		Calendar cal=Calendar.getInstance();
-		
+
 		if(text!=null&&text.length()!=0)
 		{
-			cal.add(Calendar.SECOND,ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
+			Calendar calTimeOut=Calendar.getInstance();
+			calTimeOut.add(Calendar.SECOND,ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
+
+			Calendar calDiscardTime=Calendar.getInstance();
+			calDiscardTime.add(Calendar.SECOND,(2*ServerSingleton.CONST_DELTA_TIMEOUT_VAL+ServerSingleton.CONST_GAMMA_TIMEOUT_VAL));
 			String[] sessionValArr=Util.tokenize(getSessionValue(currCookie));
-			
+
 			sessionValArr[Util.MESSAGE]=text;
-			sessionValArr[Util.EXPIRATION_TIME]=cal.getTime().toString();
-			
+			sessionValArr[Util.EXPIRATION_TIME]=calTimeOut.getTime().toString();
+			sessionValArr[Util.DISCARD_TIME]=calDiscardTime.getTime().toString();
+
 			String cookieVal=Util.combine(sessionValArr);
-			
+
 			serverInstance.sessionInfoCMap.remove(currCookie.getValue());
 			serverInstance.sessionInfoCMap.put(currCookie.getValue(),cookieVal);
 			// currCookie.setValue(cookieVal);

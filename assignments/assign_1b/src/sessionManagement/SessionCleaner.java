@@ -33,7 +33,7 @@ public class SessionCleaner extends Thread
 				{
 					try
 					{
-						timeVal=sdf.parse(sessionValue.split(",")[3]);
+						timeVal = sdf.parse(sessionValue.substring(sessionValue.lastIndexOf(Util.DELIM)));
 						if(timeVal.before(cal.getTime()))
 						{
 							System.out.println("Value deleted by Daemon Thread from Session Table :: "+cMapEntrySet.getKey());

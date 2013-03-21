@@ -4,7 +4,7 @@ import javax.servlet.http.Cookie;
 
 public class Util
 {
-	public static String delim="[_]";
+	public static String DELIM="_";
 	public static int SESSION_NO=0;
 	public static int IP_CREATOR=1;
 	public static int PORT_CREATOR=2;
@@ -28,7 +28,7 @@ public class Util
 	{
 		if(str==null)
 			return null;
-		String[] token=str.split(delim);
+		String[] token=str.split(DELIM);
 		return token;
 	}
 
@@ -38,7 +38,7 @@ public class Util
 
 		for(int i=0;i<str.length;i++)
 		{
-			ret+=str[i]+"_";
+			ret+=str[i]+DELIM;
 		}
 
 		return ret;
@@ -70,19 +70,19 @@ public class Util
 	public static String getPrimaryIpp(Cookie cookie)
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
-		return cookieValue[Util.IP_PRIMARY]+"_"+cookieValue[Util.PORT_PRIMARY];
+		return cookieValue[Util.IP_PRIMARY]+DELIM+cookieValue[Util.PORT_PRIMARY];
 	}
 
 	public static String getBackupIpp(Cookie cookie)
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
-		return cookieValue[Util.IP_BACKUP]+"_"+cookieValue[Util.PORT_BACKUP];
+		return cookieValue[Util.IP_BACKUP]+DELIM+cookieValue[Util.PORT_BACKUP];
 	}
 
 	public static String getSessionId(Cookie cookie)
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
-		return cookieValue[Util.SESSION_NO]+"_"+cookieValue[Util.IP_CREATOR];
+		return cookieValue[Util.SESSION_NO]+DELIM+cookieValue[Util.IP_CREATOR];
 	}
 
 	public static String getVersionNumber(Cookie cookie)

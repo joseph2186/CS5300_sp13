@@ -54,12 +54,7 @@ public class RpcServerStub extends Thread
 		ServerSingleton serverInstance=ServerSingleton.getInstance();
 		String sessionInfo=serverInstance.sessionInfoCMap.get(SID);
 
-		// check for sanity
-		if(sessionInfo==null)
-		{
-			// error
-		}
-
+		//the check for sessionInfo being null should be done by the client
 		return sessionInfo;
 	}
 
@@ -166,6 +161,12 @@ public class RpcServerStub extends Thread
 						output=GetMembers(Integer.parseInt(tokens[0]));
 						break;
 				}
+				
+				out=new ObjectOutputStream(bos);
+				out.writeObject(inBuf);
+				byte[] outBufBytes=bos.toByteArray();
+				DatagramPacket _sendPkt=new DatagramPacket(outBufBytes,outBufBytes.length,returnAddress,returnPort);
+				_rpcSocket.send(_sendPkt);
 
 			}
 			catch(IOException e)

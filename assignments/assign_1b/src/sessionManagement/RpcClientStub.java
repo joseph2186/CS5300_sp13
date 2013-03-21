@@ -59,7 +59,8 @@ public class RpcClientStub
 			// the ippList is populated as string pairs IP_Port
 			for(int i=0;i<_ippList.length;i=i+2)
 			{
-				if(Util.isNullIPP(_ippList[i],_ippList[i+1])){
+				if(Util.isNullIPP(_ippList[i],_ippList[i+1]))
+				{
 					continue;
 				}
 				_sendPkt=new DatagramPacket(outBufBytes,outBufBytes.length,InetAddress.getByName(_ippList[i]),Integer.parseInt(_ippList[i+1]));
@@ -77,8 +78,8 @@ public class RpcClientStub
 				}
 				catch(SocketTimeoutException e)
 				{
-					// TODO : we need to return null here but have 
-					// 			to change logic at places this is getting called
+					// TODO : we need to return null here but have
+					// to change logic at places this is getting called
 					e.printStackTrace();
 					return null;
 				}
@@ -97,12 +98,17 @@ public class RpcClientStub
 
 			}
 			while(Integer.parseInt(tokens[0])!=_callId);
+			out.close();
+			in.close();
+			bis.close();
+			bos.close();
 		}
 		catch(IOException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
 		rpcSocket.close();
 		return tokens;
 	}
