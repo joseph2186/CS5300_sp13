@@ -24,7 +24,7 @@ public class SessionCleaner extends Thread
 		{
 			Calendar cal=Calendar.getInstance();
 			Date timeVal=new Date();
-			for(Entry<String,String> cMapEntrySet : serverInstance.sessionInfo.entrySet())
+			for(Entry<String,String> cMapEntrySet : serverInstance.sessionInfoCMap.entrySet())
 			{
 				String sessionValue=cMapEntrySet.getValue();
 				SimpleDateFormat sdf=new SimpleDateFormat(ServerSingleton.CONST_STRING_SDF_FORMAT);
@@ -37,7 +37,7 @@ public class SessionCleaner extends Thread
 						if(timeVal.before(cal.getTime()))
 						{
 							System.out.println("Value deleted by Daemon Thread from Session Table :: "+cMapEntrySet.getKey());
-							((ConcurrentHashMap<String,String>)serverInstance.sessionInfo).remove(cMapEntrySet.getKey());
+							((ConcurrentHashMap<String,String>)serverInstance.sessionInfoCMap).remove(cMapEntrySet.getKey());
 						}
 					}
 					catch(ParseException e1)
@@ -47,7 +47,7 @@ public class SessionCleaner extends Thread
 				}
 				else
 				{
-					((ConcurrentHashMap<String,String>)serverInstance.sessionInfo).remove(cMapEntrySet.getKey());
+					((ConcurrentHashMap<String,String>)serverInstance.sessionInfoCMap).remove(cMapEntrySet.getKey());
 				}
 			}
 			try

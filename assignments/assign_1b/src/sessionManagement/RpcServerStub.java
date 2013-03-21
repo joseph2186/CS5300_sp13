@@ -121,7 +121,7 @@ public class RpcServerStub extends Thread
 				opCode=inBuf.getOpCode();
 				callId=inBuf.getCallId();
 				data=inBuf.getData();
-				tokens=UtilityMethods.tokenize(data);
+				tokens=Util.tokenize(data);
 
 				switch(opCode)
 				{
