@@ -41,7 +41,7 @@ public class Util {
 	}
 
 	public static String[] getIppList(Cookie cookie){
-		String[] ippList = null;
+		String[] ippList = new String[4];
 		String[] cookieValue = Util.tokenize(cookie.getValue());
 		ippList[0] = cookieValue[Util.IP_PRIMARY];
 		ippList[1] = cookieValue[Util.PORT_PRIMARY];
@@ -79,7 +79,7 @@ public class Util {
 	public static String getSessionId(Cookie cookie){
 		String[] cookieValue = Util.tokenize(cookie.getValue());
 		return cookieValue[Util.SESSION_NO] + DELIM
-				+ cookieValue[Util.IP_CREATOR];
+				+ cookieValue[Util.IP_CREATOR]+DELIM + cookieValue[Util.PORT_CREATOR];
 	}
 
 	public static String getVersionNumber(Cookie cookie){

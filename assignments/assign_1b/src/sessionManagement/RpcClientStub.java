@@ -29,12 +29,12 @@ public class RpcClientStub {
 	}
 
 	public String[] RpcClientStubHandler(){
-		ByteArrayOutputStream bos = null;
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		ByteArrayInputStream bis = null;
 		ObjectOutput out = null;
 		ObjectInput in = null;
 
-		ServerSingleton.InBuf inBuf = null;
+		ServerSingleton.InBuf inBuf = ServerSingleton.getInstance().new InBuf();
 		byte[] outBufBytes = null;
 		byte[] inBufBytes = null;
 		String obj = "";

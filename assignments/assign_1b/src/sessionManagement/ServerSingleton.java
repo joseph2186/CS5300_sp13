@@ -89,11 +89,11 @@ public class ServerSingleton {
 		ServerSingleton.sessionInfoCMap = sessionInfo;
 	}
 
-	public static Vector getMbrSet(){
+	public static Vector<String> getMbrSet(){
 		return mbrSet;
 	}
 
-	public static void setMbrSet(Vector mbrSet){
+	public static void setMbrSet(Vector<String> mbrSet){
 		ServerSingleton.mbrSet = mbrSet;
 	}
 
