@@ -50,30 +50,52 @@ public class RpcServerStub extends Thread
 
 	public String SessionRead(String SID,int version)
 	{
-		String output=null;
+		// get the session info from the session table
+		ServerSingleton serverInstance=ServerSingleton.getInstance();
+		String sessionInfo=serverInstance.sessionInfoCMap.get(SID);
 
-		return output;
+		// check for sanity
+		if(sessionInfo==null)
+		{
+			// error
+		}
+
+		return sessionInfo;
 	}
 
-	public String SessionWrite(String SID,int version,String data,String discardTime)
+	public String SessionWrite(String SID,int version,String sessionInfo,String discardTime)
 	{
-		String output=null;
+		ServerSingleton serverInstance=ServerSingleton.getInstance();
+		serverInstance.sessionInfoCMap.put(SID,sessionInfo);
 
-		return output;
+		return Util.ACK;
 
 	}
 
 	public String SessionDelete(String SID,int version)
 	{
-		String output=null;
+		ServerSingleton serverInstance=ServerSingleton.getInstance();
+		serverInstance.sessionInfoCMap.remove(SID);
 
-		return output;
+		return Util.ACK;
 
 	}
 
 	public String GetMembers(int size)
 	{
-		String output=null;
+		ServerSingleton serverInstance=ServerSingleton.getInstance();
+		String output="";
+		try
+		{
+			for(int i=0;i<size;i++)
+			{
+				output+=serverInstance.mbrSet.get(i);
+			}
+		}
+		catch(ArrayIndexOutOfBoundsException e)
+		{
+			output = Util.ACK;
+		}
 
 		return output;
 
@@ -96,6 +118,7 @@ public class RpcServerStub extends Thread
 			String data=null;
 			String[] tokens=null;
 			String output=null;
+			String sessionId="";
 
 			try
 			{
@@ -126,13 +149,18 @@ public class RpcServerStub extends Thread
 				switch(opCode)
 				{
 					case SESSIONREAD:
-						output=SessionRead(tokens[0],Integer.parseInt(tokens[1]));
+						sessionId=tokens[0]+"_"+tokens[1];
+						output=SessionRead(sessionId,Integer.parseInt(tokens[2]));
 						break;
 					case SESSIONWRITE:
-						output=SessionWrite(tokens[0],Integer.parseInt(tokens[1]),tokens[2],tokens[3]);
+						sessionId=tokens[0]+"_"+tokens[1];
+						String sessionInfo=tokens[Util.VERSION_ID+2]+"_"+tokens[Util.MESSAGE+2]+"_"+tokens[Util.EXPIRATION_TIME+2]+"_"+tokens[Util.DISCARD_TIME+2];
+
+						output=SessionWrite(sessionId,Integer.parseInt(tokens[1]),sessionInfo,tokens[Util.DISCARD_TIME+2]);
 						break;
 					case SESSIONDELETE:
-						output=SessionDelete(tokens[0],Integer.parseInt(tokens[1]));
+						sessionId=tokens[0]+"_"+tokens[1];
+						output=SessionDelete(tokens[0],Integer.parseInt(tokens[2]));
 						break;
 					case GETMEMBER:
 						output=GetMembers(Integer.parseInt(tokens[0]));

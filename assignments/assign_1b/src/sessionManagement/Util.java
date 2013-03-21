@@ -13,10 +13,16 @@ public class Util
 	public static int PORT_PRIMARY=5;
 	public static int IP_BACKUP=6;
 	public static int PORT_BACKUP=7;
-	
-	public static String NACK = "NACK";
-	public static String NULL_IP = "0.0.0.0";
-	public static String NULL_PORT = "0";
+
+	public static int VERSION_ID=0;
+	public static int MESSAGE=1;
+	public static int EXPIRATION_TIME=2;
+	public static int DISCARD_TIME=3;
+
+	public static String NACK="NACK";
+	public static String ACK="ACK";
+	public static String NULL_IP="0.0.0.0";
+	public static String NULL_PORT="0";
 
 	public static String[] tokenize(String str)
 	{
@@ -54,46 +60,55 @@ public class Util
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
 		String[] ippList=Util.tokenize(myIpp);
-		if((cookieValue[Util.IP_PRIMARY].equalsIgnoreCase(ippList[0])&&(cookieValue[Util.PORT_PRIMARY].equalsIgnoreCase(ippList[1]))
-				||(cookieValue[Util.IP_BACKUP].equalsIgnoreCase(ippList[0]))&&(cookieValue[Util.PORT_BACKUP].equalsIgnoreCase(ippList[1]))))
+		if((cookieValue[Util.IP_PRIMARY].equalsIgnoreCase(ippList[0])&&(cookieValue[Util.PORT_PRIMARY].equalsIgnoreCase(ippList[1]))||(cookieValue[Util.IP_BACKUP].equalsIgnoreCase(ippList[0]))&&(cookieValue[Util.PORT_BACKUP].equalsIgnoreCase(ippList[1]))))
 			return true;
 		else
 			return false;
 
 	}
-	
+
 	public static String getPrimaryIpp(Cookie cookie)
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
 		return cookieValue[Util.IP_PRIMARY]+"_"+cookieValue[Util.PORT_PRIMARY];
 	}
-	
+
 	public static String getBackupIpp(Cookie cookie)
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
 		return cookieValue[Util.IP_BACKUP]+"_"+cookieValue[Util.PORT_BACKUP];
 	}
-	
+
 	public static String getSessionId(Cookie cookie)
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
 		return cookieValue[Util.SESSION_NO]+"_"+cookieValue[Util.IP_CREATOR];
 	}
-	
-	public static boolean isNullIPP(String ip, String port){
-		if(ip.equalsIgnoreCase(NULL_IP) && port.equalsIgnoreCase(NULL_PORT)){
+
+	public static String getVersionNumber(Cookie cookie)
+	{
+		String[] CookieValue=Util.tokenize(cookie.getValue());
+		return CookieValue[Util.VERSION];
+	}
+
+	public static boolean isNullIPP(String ip,String port)
+	{
+		if(ip.equalsIgnoreCase(NULL_IP)&&port.equalsIgnoreCase(NULL_PORT))
+		{
 			return true;
-		}else{
+		}
+		else
+		{
 			return false;
 		}
 	}
-	
-	public static void updateIppBackup(Cookie cookie, String[] ippBackup)
+
+	public static void updateIppBackup(Cookie cookie,String[] ippBackup)
 	{
 		String[] cookieValue=Util.tokenize(cookie.getValue());
-		cookieValue[Util.IP_BACKUP] = ippBackup[0];
-		cookieValue[Util.PORT_BACKUP] = ippBackup[1];
+		cookieValue[Util.IP_BACKUP]=ippBackup[0];
+		cookieValue[Util.PORT_BACKUP]=ippBackup[1];
 		cookie.setValue(combine(cookieValue));
 	}
-	
+
 }
