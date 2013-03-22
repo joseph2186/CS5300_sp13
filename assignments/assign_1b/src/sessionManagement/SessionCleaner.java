@@ -23,6 +23,7 @@ public class SessionCleaner extends Thread {
 			for(Entry<String,String> cMapEntrySet : serverInstance.sessionInfoCMap
 					.entrySet()){
 				String sessionValue = cMapEntrySet.getValue();
+				String[] sessionValueToken = Util.tokenize(sessionValue);
 				SimpleDateFormat sdf =
 						new SimpleDateFormat(
 								ServerSingleton.CONST_STRING_SDF_FORMAT);
@@ -30,8 +31,7 @@ public class SessionCleaner extends Thread {
 				if(sessionValue != null && sessionValue.length() != 0){
 					try{
 						timeVal =
-								sdf.parse(sessionValue.substring(sessionValue
-										.lastIndexOf(Util.DELIM)));
+								sdf.parse(sessionValueToken[Util.DISCARD_TIME]);
 						if(timeVal.before(cal.getTime())){
 							System.out
 									.println("Value deleted by Daemon Thread from Session Table :: "
