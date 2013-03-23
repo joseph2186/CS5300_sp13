@@ -1,11 +1,12 @@
 package sessionManagement;
 
+import java.io.Serializable;
 import java.net.DatagramSocket;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerSingleton {
+public class ServerSingleton implements Serializable{
 	private static ServerSingleton _instance = null;
 
 	// Maintain all the server datastructures here
@@ -30,10 +31,10 @@ public class ServerSingleton {
 
 	private static DatagramSocket rpcSocket = null;
 
-	public class InBuf {
+	public class InBuf implements Serializable{
 		OperationCode opCode;
 		int callId;
-		String data = null;
+		String data = "";
 
 		public String getData(){
 			return data;

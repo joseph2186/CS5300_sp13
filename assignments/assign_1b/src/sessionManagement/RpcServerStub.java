@@ -29,6 +29,10 @@ public class RpcServerStub extends Thread {
 		}
 	}
 
+	public int get_serverPort(){
+		return _serverPort;
+	}
+
 	public static RpcServerStub getInstance(ServerSingleton serverInstance){
 		if(_instance == null){
 			_instance = new RpcServerStub(serverInstance);
@@ -45,6 +49,8 @@ public class RpcServerStub extends Thread {
 		ServerSingleton serverInstance = ServerSingleton.getInstance();
 		String sessionInfo = serverInstance.sessionInfoCMap.get(SID);
 
+		System.out.println("Inside session read SID = " + SID + ":"
+				+ sessionInfo);
 		// the check for sessionInfo being null should be done by the client
 		return sessionInfo;
 	}
@@ -53,6 +59,9 @@ public class RpcServerStub extends Thread {
 			String discardTime){
 		ServerSingleton serverInstance = ServerSingleton.getInstance();
 		serverInstance.sessionInfoCMap.put(SID,sessionInfo);
+		
+		System.out.println("Inside session write SID = " + SID + ":"
+				+ sessionInfo);
 
 		return Util.ACK;
 
@@ -83,27 +92,22 @@ public class RpcServerStub extends Thread {
 
 	@Override
 	public void run(){
+		ServerSingleton.InBuf inBuf = ServerSingleton.getInstance().new InBuf();
+		ObjectOutput out = null;
+		ObjectInput in = null;
+		ByteArrayOutputStream bos = null;
+		ByteArrayInputStream bis = null;
+		InetAddress returnAddress = null;
+		int returnPort = 0;
+		OperationCode opCode = null;
+		int callId = 0;
+		String data = null;
+		String[] tokens = null;
+		String output = null;
+		String sessionId = "";
 		while(true){
-			ServerSingleton.InBuf inBuf = null;
-			ObjectOutput out = null;
-			ObjectInput in = null;
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ByteArrayInputStream bis = null;
-			InetAddress returnAddress = null;
-			int returnPort = 0;
-			OperationCode opCode = null;
-			int callId = 0;
-			String data = null;
-			String[] tokens = null;
-			String output = null;
-			String sessionId = "";
-
 			try{
-				// converting the object type of inBuf to byte[]
-				out = new ObjectOutputStream(bos);
-				out.writeObject(inBuf);
-
-				byte[] inBufBytes = bos.toByteArray();
+				byte[] inBufBytes = new byte[512];
 				DatagramPacket recvPkt =
 						new DatagramPacket(inBufBytes,inBufBytes.length);
 
@@ -123,40 +127,57 @@ public class RpcServerStub extends Thread {
 				callId = inBuf.getCallId();
 				data = inBuf.getData();
 				tokens = Util.tokenize(data);
+				
+				
+				in.close();
+				bis.close();
 
 				switch(opCode){
 					case SESSIONREAD:
-						sessionId = tokens[0] + Util.DELIM + tokens[1];
+						sessionId =
+								tokens[0] + Util.DELIM + tokens[1] + Util.DELIM
+										+ tokens[2];
 						output =
 								SessionRead(sessionId,
-										Integer.parseInt(tokens[2]));
+										Integer.parseInt(tokens[3]));
 						break;
 					case SESSIONWRITE:
-						sessionId = tokens[0] + Util.DELIM + tokens[1];
+						sessionId =
+								tokens[0] + Util.DELIM + tokens[1] + Util.DELIM
+										+ tokens[2];
 						String sessionInfo =
-								tokens[Util.VERSION_ID + 2] + Util.DELIM
-										+ tokens[Util.MESSAGE + 2] + Util.DELIM
-										+ tokens[Util.EXPIRATION_TIME + 2]
+								tokens[Util.VERSION_ID + 3] + Util.DELIM
+										+ tokens[Util.MESSAGE + 3] + Util.DELIM
+										+ tokens[Util.EXPIRATION_TIME + 3]
 										+ Util.DELIM
-										+ tokens[Util.DISCARD_TIME + 2];
+										+ tokens[Util.DISCARD_TIME + 3];
 
 						output =
 								SessionWrite(sessionId,
-										Integer.parseInt(tokens[1]),
+										Integer.parseInt(tokens[3]),
 										sessionInfo,
-										tokens[Util.DISCARD_TIME + 2]);
+										tokens[Util.DISCARD_TIME + 3]);
 						break;
 					case SESSIONDELETE:
-						sessionId = tokens[0] + Util.DELIM + tokens[1];
+						sessionId =
+								tokens[0] + Util.DELIM + tokens[1] + Util.DELIM
+										+ tokens[2];
 						output =
-								SessionDelete(tokens[0],
-										Integer.parseInt(tokens[2]));
+								SessionDelete(sessionId,
+										Integer.parseInt(tokens[3]));
 						break;
 					case GETMEMBER:
 						output = GetMembers(Integer.parseInt(tokens[0]));
 						break;
 				}
-
+				
+				//inBuf = ServerSingleton.getInstance()
+				inBuf.setData(output);
+				inBuf.setCallId(callId);
+				inBuf.setOpCode(opCode);
+				
+				System.out.println("server stub after callid ="+inBuf.getCallId());
+				bos = new ByteArrayOutputStream();
 				out = new ObjectOutputStream(bos);
 				out.writeObject(inBuf);
 				byte[] outBufBytes = bos.toByteArray();
@@ -164,6 +185,12 @@ public class RpcServerStub extends Thread {
 						new DatagramPacket(outBufBytes,outBufBytes.length,
 								returnAddress,returnPort);
 				_rpcSocket.send(_sendPkt);
+				
+				outBufBytes = null;				
+				inBuf = null;
+				
+				out.close();
+				bos.close();
 
 			}catch(IOException e){
 				// TODO Auto-generated catch block
@@ -171,18 +198,8 @@ public class RpcServerStub extends Thread {
 			}catch(ClassNotFoundException e){
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}finally{
-				try{
-					out.close();
-					in.close();
-					bis.close();
-					bos.close();
-				}catch(IOException e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			}
 		}
-	}
 
+	}
 }

@@ -37,14 +37,14 @@ public class RpcClientStub {
 		ServerSingleton.InBuf inBuf = ServerSingleton.getInstance().new InBuf();
 		byte[] outBufBytes = null;
 		byte[] inBufBytes = null;
-		String obj = "";
+		ServerSingleton.InBuf obj = null;
 		String[] tokens = null;
 		DatagramSocket rpcSocket = null;
 
 		try{
 			rpcSocket = new DatagramSocket();
 			// TODO: check the time out value
-			rpcSocket.setSoTimeout(200);
+			rpcSocket.setSoTimeout(0);
 			inBuf.setCallId(_callId);
 			inBuf.setOpCode(_opCode);
 			inBuf.setData(_data);
@@ -80,18 +80,22 @@ public class RpcClientStub {
 				bis = new ByteArrayInputStream(inBufBytes);
 				in = new ObjectInputStream(bis);
 				try{
-					obj = (String)in.readObject();
+					obj = ((ServerSingleton.InBuf)in.readObject());
 				}catch(ClassNotFoundException e){
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				tokens = Util.tokenize(obj);
+				tokens = Util.tokenize(obj.getData());
 
-			}while(Integer.parseInt(tokens[0]) != _callId);
-			out.close();
-			in.close();
-			bis.close();
-			bos.close();
+			}while(obj.getCallId() != _callId);
+			if(out != null)
+				out.close();
+			if(in != null)
+				in.close();
+			if(bis != null)
+				bis.close();
+			if(bos != null)
+				bos.close();
 		}catch(IOException e){
 			// TODO Auto-generated catch block
 			e.printStackTrace();

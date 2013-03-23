@@ -32,10 +32,12 @@ public class Util {
 
 	public static String combine(String[] str){
 		String ret = "";
+		int i = 0;
 
-		for(int i = 0;i < str.length;i++ ){
+		for(i = 0;i < str.length - 1;i++ ){
 			ret += str[i] + DELIM;
 		}
+		ret += str[i];
 
 		return ret;
 	}
@@ -79,7 +81,8 @@ public class Util {
 	public static String getSessionId(Cookie cookie){
 		String[] cookieValue = Util.tokenize(cookie.getValue());
 		return cookieValue[Util.SESSION_NO] + DELIM
-				+ cookieValue[Util.IP_CREATOR]+DELIM + cookieValue[Util.PORT_CREATOR];
+				+ cookieValue[Util.IP_CREATOR] + DELIM
+				+ cookieValue[Util.PORT_CREATOR];
 	}
 
 	public static String getVersionNumber(Cookie cookie){
@@ -101,5 +104,25 @@ public class Util {
 		cookieValue[Util.PORT_BACKUP] = ippBackup[1];
 		cookie.setValue(combine(cookieValue));
 	}
+	
+	public static void updateIppPrimary(Cookie cookie,String[] ippBackup){
+		String[] cookieValue = Util.tokenize(cookie.getValue());
+		cookieValue[Util.IP_PRIMARY] = ippBackup[0];
+		cookieValue[Util.PORT_PRIMARY] = ippBackup[1];
+		cookie.setValue(combine(cookieValue));
+	}
 
+	public static boolean isNullIPP(String primaryIpp){
+		String[] ippList = tokenize(primaryIpp);
+		return isNullIPP(ippList[0],ippList[1]);
+	}
+
+	public static void incrementVersionInCookie(Cookie cookie)
+	{
+		String[] cookieValue = Util.tokenize(cookie.getValue());
+		cookieValue[Util.VERSION] =
+				String.valueOf(Integer
+						.parseInt(cookieValue[Util.VERSION]) + 1);
+		cookie.setValue(combine(cookieValue));
+	}
 }
