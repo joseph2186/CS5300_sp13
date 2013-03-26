@@ -21,6 +21,7 @@ public class ServerSingleton implements Serializable{
 	public static final String CONST_STR_DEF_MSG_HELLO_USER = "Hello User!";
 	public static final String CONST_STRING_SDF_FORMAT =
 			"EEE MMM dd HH:mm:ss zzz yyyy";
+	public static final int CONST_CRASH_TIME_MS = 10000;
 
 	private static int _sessionNumber = 0;
 	private static int _callId = 0;

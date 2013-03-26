@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Currency;
+import java.util.Iterator;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -75,6 +76,23 @@ public class SessionManagement extends HttpServlet {
 		resp.setHeader("Pragma","no-cache");
 		// set the content type for the page to get rendered as HTML
 		resp.setContentType("text/html");
+
+		// check if a crash was requested
+		if(req.getParameter("cmd") != null
+				&& req.getParameter("cmd").equalsIgnoreCase("Crash-Server")){
+			System.out.println("crashing the server!!");
+			try{
+				Thread.currentThread()
+						.sleep(serverInstance.CONST_CRASH_TIME_MS);
+			}catch(InterruptedException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println("out of the crash!");
+			// TODO: Not sure if we need to return here or go ahead after sleep
+			// return causes a white screen to appear!!!
+			// return;
+		}
 
 		// Check if a cookie exists - returns null on not finding
 		Cookie currCookie = checkCookieExists(req);
@@ -295,7 +313,7 @@ public class SessionManagement extends HttpServlet {
 			if(sessionInfo == null){
 				// Error: could not fetch the session info from both the primary
 				// as well as the backup
-				// Return a timeout and delets the cookie
+				// Return a timeout and delete the cookie
 
 			}
 
@@ -361,20 +379,39 @@ public class SessionManagement extends HttpServlet {
 								+ "<li>\n"
 								+ "<input type=submit name=cmd value=LogOut>\n"
 								+ "</li>\n"
+								+ "<li>\n"
+								+ "<input type=submit name=cmd value=Crash-Server>\n"
+								+ "</li>\n"
 								+ "</ul>\n"
 								+ "</fieldset>\n"
 								+ "<p>Server IP and Port is:: "
 								+ req.getLocalAddr()
 								+ ":"
-								+ req.getLocalPort()
+								+ RpcServerStub.getInstance(serverInstance)
+										.get_serverPort()
 								+ "</p>\n"
-								+ "</FORM>\n"
-								+ "</body>\n"
-								+ "</html>");
+								+ "</FORM>\n" + "</body>\n" + "</html>");
 
+						if( !Util.isIppMine(currCookie,getIPP(req))){
+							// print the ipp of the primary and backup
+							pWriter.println("\nIPP-Primary: "
+									+ (Util.getPrimaryIpp(currCookie))
+									+ " IPP-Backup: "
+									+ (Util.getBackupIpp(currCookie)));
+						}else{
+							pWriter.println("\nCookie found in the cache\n");
+						}
 						pWriter.println("\nExpiration Time: "
 								+ (sessionValTokens[Util.EXPIRATION_TIME])
 								+ "\n");
+
+						pWriter.println("\nDiscard Time: "
+								+ (sessionValTokens[Util.DISCARD_TIME]) + "\n");
+
+						Iterator<String> itr = serverInstance.mbrSet.iterator();
+						pWriter.println("\nMBR Set:\n");
+						while(itr.hasNext())
+							pWriter.println(itr.next() + "\n");
 
 						pWriter.println(additionalData);
 					}
@@ -402,17 +439,36 @@ public class SessionManagement extends HttpServlet {
 						+ "<li>\n"
 						+ "<input type=submit name=cmd value=LogOut>\n"
 						+ "</li>\n"
+						+ "<li>\n"
+						+ "<input type=submit name=cmd value=Crash-Server>\n"
+						+ "</li>\n"
 						+ "</ul>\n"
 						+ "</fieldset>\n"
 						+ "<p>Server IP and Port is:: "
 						+ req.getLocalAddr()
 						+ ":"
-						+ req.getLocalPort()
+						+ RpcServerStub.getInstance(serverInstance)
+								.get_serverPort()
 						+ "</p>\n"
 						+ "</FORM>\n"
 						+ "</body>\n" + "</html>");
+				if( !Util.isIppMine(currCookie,getIPP(req))){
+					// print the ipp of the primary and backup
+					pWriter.println("\nIPP-Primary: "
+							+ (Util.getPrimaryIpp(currCookie))
+							+ " IPP-Backup: " + (Util.getBackupIpp(currCookie)));
+				}else{
+					pWriter.println("\nCookie found in the cache");
+				}
 				pWriter.println("\nExpiration Time: "
 						+ (sessionValTokens[Util.EXPIRATION_TIME]) + "\n");
+				pWriter.println("\nDiscard Time: "
+						+ (sessionValTokens[Util.DISCARD_TIME]) + "\n");
+				
+				Iterator<String> itr = serverInstance.mbrSet.iterator();
+				pWriter.println("MBR Set:\n");
+				while(itr.hasNext())
+					pWriter.println(itr.next() + "\n");
 
 			}
 		}catch(IOException e){
