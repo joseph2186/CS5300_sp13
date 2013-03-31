@@ -4,6 +4,7 @@ import javax.servlet.http.Cookie;
 
 public class Util {
 	public static String DELIM = "_";
+	// Cookie Information
 	public static int SESSION_NO = 0;
 	public static int IP_CREATOR = 1;
 	public static int PORT_CREATOR = 2;
@@ -13,6 +14,7 @@ public class Util {
 	public static int IP_BACKUP = 6;
 	public static int PORT_BACKUP = 7;
 
+	// SSTable Entries
 	public static int VERSION_ID = 0;
 	public static int MESSAGE = 1;
 	public static int EXPIRATION_TIME = 2;
@@ -104,11 +106,11 @@ public class Util {
 		cookieValue[Util.PORT_BACKUP] = ippBackup[1];
 		cookie.setValue(combine(cookieValue));
 	}
-	
-	public static void updateIppPrimary(Cookie cookie,String[] ippBackup){
+
+	public static void updateIppPrimary(Cookie cookie,String[] ippPrimary){
 		String[] cookieValue = Util.tokenize(cookie.getValue());
-		cookieValue[Util.IP_PRIMARY] = ippBackup[0];
-		cookieValue[Util.PORT_PRIMARY] = ippBackup[1];
+		cookieValue[Util.IP_PRIMARY] = ippPrimary[0];
+		cookieValue[Util.PORT_PRIMARY] = ippPrimary[1];
 		cookie.setValue(combine(cookieValue));
 	}
 
@@ -117,12 +119,10 @@ public class Util {
 		return isNullIPP(ippList[0],ippList[1]);
 	}
 
-	public static void incrementVersionInCookie(Cookie cookie)
-	{
+	public static void incrementVersionInCookie(Cookie cookie){
 		String[] cookieValue = Util.tokenize(cookie.getValue());
 		cookieValue[Util.VERSION] =
-				String.valueOf(Integer
-						.parseInt(cookieValue[Util.VERSION]) + 1);
+				String.valueOf(Integer.parseInt(cookieValue[Util.VERSION]) + 1);
 		cookie.setValue(combine(cookieValue));
 	}
 }

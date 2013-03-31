@@ -59,7 +59,7 @@ public class RpcServerStub extends Thread {
 			String discardTime){
 		ServerSingleton serverInstance = ServerSingleton.getInstance();
 		serverInstance.sessionInfoCMap.put(SID,sessionInfo);
-		
+
 		System.out.println("Inside session write SID = " + SID + ":"
 				+ sessionInfo);
 
@@ -87,7 +87,6 @@ public class RpcServerStub extends Thread {
 		}
 
 		return output;
-
 	}
 
 	@Override
@@ -105,6 +104,7 @@ public class RpcServerStub extends Thread {
 		String[] tokens = null;
 		String output = null;
 		String sessionId = "";
+		String senderRpcServerInet = "";
 		while(true){
 			try{
 				byte[] inBufBytes = new byte[512];
@@ -115,6 +115,23 @@ public class RpcServerStub extends Thread {
 
 				returnAddress = recvPkt.getAddress();
 				returnPort = recvPkt.getPort();
+
+				// Fix - March 31
+				// Add to memberSet if not already existing
+				String ippEntry =
+						returnAddress.getHostAddress() + Util.DELIM
+								+ returnPort;
+				// System.out.println("GEET_________" +
+				// _serverInstance.mbrSet.toString());
+				// System.out.println("Now:: __________" + ippEntry);
+
+				/*
+				 * if(!_serverInstance.mbrSet.contains(ippEntry)&&!(Util.isNullIPP
+				 * (ippEntry))) { _serverInstance.mbrSet.add(ippEntry); }
+				 * if(!_serverInstance
+				 * .mbrSet.contains(ippEntry)&&!(Util.isNullIPP(ippEntry))) {
+				 * _serverInstance.mbrSet.add(ippEntry); }
+				 */
 
 				// converting byte[] to object type inBuf
 				bis = new ByteArrayInputStream(inBufBytes);
@@ -127,8 +144,20 @@ public class RpcServerStub extends Thread {
 				callId = inBuf.getCallId();
 				data = inBuf.getData();
 				tokens = Util.tokenize(data);
-				
-				
+				senderRpcServerInet = inBuf.getSenderRpcINetAddress();
+
+				// System.out.println("Correct Value: __________ " +
+				// senderRpcServerInet);
+
+				if( !_serverInstance.mbrSet.contains(senderRpcServerInet)
+						&& !(Util.isNullIPP(senderRpcServerInet))){
+					_serverInstance.mbrSet.add(senderRpcServerInet);
+				}
+				if( !_serverInstance.mbrSet.contains(senderRpcServerInet)
+						&& !(Util.isNullIPP(senderRpcServerInet))){
+					_serverInstance.mbrSet.add(senderRpcServerInet);
+				}
+
 				in.close();
 				bis.close();
 
@@ -170,13 +199,13 @@ public class RpcServerStub extends Thread {
 						output = GetMembers(Integer.parseInt(tokens[0]));
 						break;
 				}
-				
-				//inBuf = ServerSingleton.getInstance()
+
+				// inBuf = ServerSingleton.getInstance()
 				inBuf.setData(output);
 				inBuf.setCallId(callId);
 				inBuf.setOpCode(opCode);
-				
-				System.out.println("server stub after callid ="+inBuf.getCallId());
+
+				// System.out.println("server stub after callid ="+inBuf.getCallId());
 				bos = new ByteArrayOutputStream();
 				out = new ObjectOutputStream(bos);
 				out.writeObject(inBuf);
@@ -185,10 +214,10 @@ public class RpcServerStub extends Thread {
 						new DatagramPacket(outBufBytes,outBufBytes.length,
 								returnAddress,returnPort);
 				_rpcSocket.send(_sendPkt);
-				
-				outBufBytes = null;				
+
+				outBufBytes = null;
 				inBuf = null;
-				
+
 				out.close();
 				bos.close();
 
@@ -200,6 +229,7 @@ public class RpcServerStub extends Thread {
 				e.printStackTrace();
 			}
 		}
-
+		// Fix - march 31
+		// _rpcSocket.close();
 	}
 }

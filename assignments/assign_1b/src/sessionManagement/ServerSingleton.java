@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerSingleton implements Serializable{
+public class ServerSingleton implements Serializable {
 	private static ServerSingleton _instance = null;
 
-	// Maintain all the server datastructures here
+	// Maintain all the server data structures here
 	static Map<String,String> sessionInfoCMap;
 	static Vector<String> mbrSet;
 
@@ -32,10 +32,20 @@ public class ServerSingleton implements Serializable{
 
 	private static DatagramSocket rpcSocket = null;
 
-	public class InBuf implements Serializable{
+	public class InBuf implements Serializable {
 		OperationCode opCode;
 		int callId;
 		String data = "";
+		// Fix -? March 31
+		String senderRpcINetAddress;
+
+		public String getSenderRpcINetAddress(){
+			return senderRpcINetAddress;
+		}
+
+		public void setSenderRpcINetAddress(String senderRpcINetAddress){
+			this.senderRpcINetAddress = senderRpcINetAddress;
+		}
 
 		public String getData(){
 			return data;

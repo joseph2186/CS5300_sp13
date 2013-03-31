@@ -19,13 +19,16 @@ public class RpcClientStub {
 	private OperationCode _opCode = null;
 	private String _data = "";
 	private int _callId = 0;
+	// Fix - ?
+	private String _senderRpcServerInet = "";
 
 	public RpcClientStub (OperationCode opCode, int callId, String[] ippList,
-			String data){
+			String data, String senderRpcServerInet){
 		_opCode = opCode;
 		_callId = callId;
 		_ippList = ippList;
 		_data = data;
+		_senderRpcServerInet = senderRpcServerInet;
 	}
 
 	public String[] RpcClientStubHandler(){
@@ -48,6 +51,7 @@ public class RpcClientStub {
 			inBuf.setCallId(_callId);
 			inBuf.setOpCode(_opCode);
 			inBuf.setData(_data);
+			inBuf.setSenderRpcINetAddress(_senderRpcServerInet);
 
 			out = new ObjectOutputStream(bos);
 			out.writeObject(inBuf);
@@ -55,6 +59,8 @@ public class RpcClientStub {
 
 			// the ippList is populated as string pairs IP_Port
 			for(int i = 0;i < _ippList.length;i = i + 2){
+				// System.out.println("SENDING___" + _ippList[i]);
+				// System.out.println("AND____" + _ippList[i+1]);
 				if(Util.isNullIPP(_ippList[i],_ippList[i + 1])){
 					continue;
 				}
@@ -100,8 +106,10 @@ public class RpcClientStub {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		rpcSocket.close();
+		// Fix - March 31
+		finally{
+			rpcSocket.close();
+		}
 		return tokens;
 	}
 }

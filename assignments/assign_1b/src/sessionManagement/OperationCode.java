@@ -3,12 +3,9 @@ package sessionManagement;
 /**
  * 
  * 
- * @author 	root
+ * @author root
  * @version 1.0
  */
 public enum OperationCode {
-	SESSIONREAD,
-	SESSIONWRITE,
-	SESSIONDELETE,
-	GETMEMBER
+	SESSIONREAD, SESSIONWRITE, SESSIONDELETE, GETMEMBER
 }
