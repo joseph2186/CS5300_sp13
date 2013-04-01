@@ -11,11 +11,13 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class RpcServerStub extends Thread {
 	private static RpcServerStub _instance = null;
 	private DatagramSocket _rpcSocket = null;
 	private int _serverPort = 0;
+	private InetAddress _serverAddress = null;
 	private ServerSingleton _serverInstance = null;
 
 	private RpcServerStub (ServerSingleton serverInstance){
@@ -23,10 +25,21 @@ public class RpcServerStub extends Thread {
 			_serverInstance = serverInstance;
 			_rpcSocket = new DatagramSocket();
 			_serverPort = _rpcSocket.getLocalPort();
+			try{
+				_serverAddress = InetAddress.getLocalHost();
+			}catch(UnknownHostException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}catch(SocketException e){
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public InetAddress get_serverAddress(){
+		return _serverAddress;
 	}
 
 	public int get_serverPort(){
@@ -49,8 +62,10 @@ public class RpcServerStub extends Thread {
 		ServerSingleton serverInstance = ServerSingleton.getInstance();
 		String sessionInfo = serverInstance.sessionInfoCMap.get(SID);
 
-		System.out.println("Inside session read SID = " + SID + ":"
-				+ sessionInfo);
+		// Test print
+		// System.out.println("Inside session read SID = " + SID + ":"
+		// + sessionInfo);
+
 		// the check for sessionInfo being null should be done by the client
 		return sessionInfo;
 	}
@@ -60,8 +75,9 @@ public class RpcServerStub extends Thread {
 		ServerSingleton serverInstance = ServerSingleton.getInstance();
 		serverInstance.sessionInfoCMap.put(SID,sessionInfo);
 
-		System.out.println("Inside session write SID = " + SID + ":"
-				+ sessionInfo);
+		// test print
+		// System.out.println("Inside session write SID = " + SID + ":"
+		// + sessionInfo);
 
 		return Util.ACK;
 
@@ -78,10 +94,12 @@ public class RpcServerStub extends Thread {
 	public String GetMembers(int size){
 		ServerSingleton serverInstance = ServerSingleton.getInstance();
 		String output = "";
+		int i = 0;
 		try{
-			for(int i = 0;i < size;i++ ){
-				output += serverInstance.mbrSet.get(i);
+			for(i = 0;i < size - 1;i++ ){
+				output += serverInstance.mbrSet.get(i) + Util.DELIM;
 			}
+			output += serverInstance.mbrSet.get(i);
 		}catch(ArrayIndexOutOfBoundsException e){
 			output = Util.ACK;
 		}
@@ -116,24 +134,11 @@ public class RpcServerStub extends Thread {
 				returnAddress = recvPkt.getAddress();
 				returnPort = recvPkt.getPort();
 
-				// Fix - March 31
 				// Add to memberSet if not already existing
 				String ippEntry =
 						returnAddress.getHostAddress() + Util.DELIM
 								+ returnPort;
-				// System.out.println("GEET_________" +
-				// _serverInstance.mbrSet.toString());
-				// System.out.println("Now:: __________" + ippEntry);
 
-				/*
-				 * if(!_serverInstance.mbrSet.contains(ippEntry)&&!(Util.isNullIPP
-				 * (ippEntry))) { _serverInstance.mbrSet.add(ippEntry); }
-				 * if(!_serverInstance
-				 * .mbrSet.contains(ippEntry)&&!(Util.isNullIPP(ippEntry))) {
-				 * _serverInstance.mbrSet.add(ippEntry); }
-				 */
-
-				// converting byte[] to object type inBuf
 				bis = new ByteArrayInputStream(inBufBytes);
 				in = new ObjectInputStream(bis);
 				Object obj = in.readObject();
@@ -145,9 +150,6 @@ public class RpcServerStub extends Thread {
 				data = inBuf.getData();
 				tokens = Util.tokenize(data);
 				senderRpcServerInet = inBuf.getSenderRpcINetAddress();
-
-				// System.out.println("Correct Value: __________ " +
-				// senderRpcServerInet);
 
 				if( !_serverInstance.mbrSet.contains(senderRpcServerInet)
 						&& !(Util.isNullIPP(senderRpcServerInet))){
@@ -205,7 +207,9 @@ public class RpcServerStub extends Thread {
 				inBuf.setCallId(callId);
 				inBuf.setOpCode(opCode);
 
+				// test print
 				// System.out.println("server stub after callid ="+inBuf.getCallId());
+
 				bos = new ByteArrayOutputStream();
 				out = new ObjectOutputStream(bos);
 				out.writeObject(inBuf);
@@ -229,7 +233,5 @@ public class RpcServerStub extends Thread {
 				e.printStackTrace();
 			}
 		}
-		// Fix - march 31
-		// _rpcSocket.close();
 	}
 }

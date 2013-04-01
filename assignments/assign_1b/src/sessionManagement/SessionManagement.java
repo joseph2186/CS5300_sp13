@@ -38,7 +38,7 @@ public class SessionManagement extends HttpServlet {
 
 		// instantiate the daemon thread for session table cleanup
 		_sessionCleaner = new SessionCleaner();
-		// _sessionCleaner.start();
+		_sessionCleaner.start();
 
 		_serverStub = RpcServerStub.getInstance(serverInstance);
 
@@ -66,6 +66,20 @@ public class SessionManagement extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest req,HttpServletResponse resp)
 			throws ServletException,IOException{
+
+		// This flag is set to true if the server session table contains the
+		// session info
+		serverInstance.IPP_FLAG = false;
+
+		if( !serverInstance.CRASH_FLAG){
+			try{
+				Thread.currentThread()
+						.sleep(serverInstance.CONST_CRASH_TIME_MS);
+			}catch(InterruptedException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		String[] sessionInfo = null;
 		// to prevent caching - for the issue with back button on browser
 		resp.setHeader("Cache-Control",
@@ -78,6 +92,9 @@ public class SessionManagement extends HttpServlet {
 		if(req.getParameter("cmd") != null
 				&& req.getParameter("cmd").equalsIgnoreCase("Crash-Server")){
 			System.out.println("crashing the server!!");
+			if(serverInstance.CRASH_FLAG){
+				serverInstance.CRASH_FLAG = false;
+			}
 			try{
 				Thread.currentThread()
 						.sleep(serverInstance.CONST_CRASH_TIME_MS);
@@ -85,10 +102,9 @@ public class SessionManagement extends HttpServlet {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			serverInstance.CRASH_FLAG = true;
+
 			System.out.println("out of the crash!");
-			// TODO: Not sure if we need to return here or go ahead after sleep
-			// return causes a white screen to appear!!!
-			// return;
 		}
 
 		// Check if a cookie exists - returns null on not finding
@@ -116,14 +132,17 @@ public class SessionManagement extends HttpServlet {
 				+ ServerSingleton.sessionInfoCMap.get(Util
 						.getSessionId(currCookie)));
 
+		// If the server instance just booted and the member set is empty get
+		// the member set from either the primary or the backup server mentioned
+		// in the cookie of the request
+		if(serverInstance.mbrSet.size() == 0)
+			updateMbrSet(currCookie,req);
 		// the below also updates the current Server stubs member Set to include
 		// IPPprimary and IPBackup values if they do not already exist in the
 		// current member set
 		sessionInfo = getSessionInfo(currCookie,req);
 		sessionManager(currCookie,req,resp,sessionInfo);
 	}
-
-	// TODO: need to add the discard time logic everywhere
 
 	private void sessionManager(Cookie cookie,HttpServletRequest req,
 			HttpServletResponse resp,String[] sessionInfo){
@@ -211,8 +230,6 @@ public class SessionManagement extends HttpServlet {
 		else if(req.getParameter("cmd") != null
 				&& req.getParameter("cmd").equalsIgnoreCase("Logout")){
 			if(doLogout(cookie,resp)){
-				// TODO: update the backup server to delete the session
-				// pWriter.print("logout successful");
 				showFormData(req,cookie,"logout successful",true,resp);
 			}else{
 				showFormData(req,cookie,"Logout Failed! - try again",false,resp);
@@ -254,7 +271,6 @@ public class SessionManagement extends HttpServlet {
 
 	private void updateBackupServer(String newSessionID,String[] sessionInfo,
 			Cookie cookie,HttpServletRequest req){
-		// TODO: Add the discard time logic in sessionInfo
 		String[] ippList = null;
 		ArrayList<String> removeList = new ArrayList<String>();
 		int i = 0;
@@ -265,7 +281,6 @@ public class SessionManagement extends HttpServlet {
 			if(i < ServerSingleton.mbrSet.size()){
 				ippList = Util.tokenize(ServerSingleton.mbrSet.elementAt(i));
 				System.out.println("sending update to " + ippList[1]);
-				// Fix -?
 				RpcClientStub clientStub =
 						new RpcClientStub(OperationCode.SESSIONWRITE,
 								serverInstance.getNextCallId(),ippList,data,
@@ -305,6 +320,45 @@ public class SessionManagement extends HttpServlet {
 		}
 	}
 
+	private void updateMbrSet(Cookie currCookie,HttpServletRequest req){
+		String[] ippList = Util.getIppList(currCookie);
+		String data = "2";
+		String[] ipSet = null;
+		int callId = serverInstance.getNextCallId();
+
+		// check if either primary or secondary ipp is equal to mine
+		// if so - return
+		if(Util.tokenize(Util.getPrimaryIpp(currCookie))[0]
+				.equalsIgnoreCase(RpcServerStub.getInstance(serverInstance)
+						.get_serverAddress().getHostAddress())
+				|| Util.tokenize(Util.getBackupIpp(currCookie))[0]
+						.equalsIgnoreCase(RpcServerStub
+								.getInstance(serverInstance)
+								.get_serverAddress().getHostAddress())){
+			return;
+		}
+
+		RpcClientStub clientStub =
+				new RpcClientStub(OperationCode.GETMEMBER,callId,ippList,data,
+						getIPP(req));
+		ippList = clientStub.RpcClientStubHandler();
+		try{
+			// update the mbr set
+			for(int i = 0;i < ippList.length;i = i + 2){
+				// check if the ipp is mine - if so dont add it
+				if(ippList[i].equalsIgnoreCase(RpcServerStub
+						.getInstance(serverInstance).get_serverAddress()
+						.getHostAddress())){
+					continue;
+				}
+				serverInstance.mbrSet.add(ippList[i] + Util.DELIM
+						+ ippList[i + 1]);
+			}
+		}catch(Exception e){
+			return;
+		}
+	}
+
 	private String[] getSessionInfo(Cookie currCookie,HttpServletRequest req){
 		String[] sessionInfo = null;
 		String sessionId = Util.getSessionId(currCookie);
@@ -312,9 +366,6 @@ public class SessionManagement extends HttpServlet {
 		String version = Util.getVersionNumber(currCookie);
 		String data = sessionId + Util.DELIM + version;
 
-		System.out.println("session ID in get info = " + sessionId);
-
-		// Fix - March 31
 		// update the mbrSet
 		if( !ServerSingleton.mbrSet.contains(Util.getPrimaryIpp(currCookie))
 				&& !(Util.isNullIPP(Util.getPrimaryIpp(currCookie)))){
@@ -331,20 +382,24 @@ public class SessionManagement extends HttpServlet {
 		if( !Util.isIppMine(currCookie,getIPP(req))){
 			int callId = serverInstance.getNextCallId();
 
-			// Fix -?
+			serverInstance.IPP_FLAG = false;
+
 			// send a read request to primary and the backup
 			RpcClientStub clientStub =
 					new RpcClientStub(OperationCode.SESSIONREAD,callId,ippList,
 							data,getIPP(req));
 			sessionInfo = clientStub.RpcClientStubHandler();
+			serverInstance.ipReceived =
+					clientStub.get_ipReceived().getHostAddress() + Util.DELIM
+							+ clientStub.get_portReceived();
 
 			if(sessionInfo == null){
 				// Error: could not fetch the session info from both the primary
 				// as well as the backup
 				// Return a timeout and delete the cookie
 			}
-			// TODO ?
 		}else{
+			serverInstance.IPP_FLAG = true;
 			System.out.println("Found session info locally");
 			String sessionInfoLocal =
 					serverInstance.sessionInfoCMap.get(sessionId);
@@ -413,35 +468,43 @@ public class SessionManagement extends HttpServlet {
 								+ "</fieldset>\n"
 								+ "<p>Server IP and Port is:: "
 								+ "req local "
-								+ req.getLocalAddr()
+								+ RpcServerStub.getInstance(serverInstance)
+										.get_serverAddress().getHostAddress()
 								+ ":"
 								+ RpcServerStub.getInstance(serverInstance)
 										.get_serverPort()
-								+ "</p>\n"
-								+ "</FORM>\n" + "</body>\n" + "</html>");
+								+ "<br>"
+								+ "Instance ID : "
+								+ Util.retrieveInstanceId()
+								+ "</p>\n" + "</FORM>\n");
 
-						if( !Util.isIppMine(currCookie,getIPP(req))){
-							// print the ipp of the primary and backup
-							pWriter.println("\nIPP-Primary: "
-									+ (Util.getPrimaryIpp(currCookie))
-									+ " IPP-Backup: "
-									+ (Util.getBackupIpp(currCookie)));
+						if(serverInstance.IPP_FLAG){
+							pWriter.println("Cookie found in the cache"
+									+ "<br>");
 						}else{
-							pWriter.println("\nCookie found in the cache\n");
+							// print the ipp of the server that we got the
+							// session info from
+							if( !serverInstance.ipReceived.equalsIgnoreCase(""))
+								pWriter.println("IPP received the info from: "
+										+ serverInstance.ipReceived + "<br>");
+							else
+								pWriter.println("New cookie created" + "<br>");
 						}
-						pWriter.println("\nExpiration Time: "
-								+ (sessionValTokens[Util.EXPIRATION_TIME])
-								+ "\n");
+						pWriter.println("Expiration Time: "
+								+ (sessionValTokens[Util.EXPIRATION_TIME]));
 
-						pWriter.println("\nDiscard Time: "
-								+ (sessionValTokens[Util.DISCARD_TIME]) + "\n");
+						pWriter.println("  Discard Time: "
+								+ (sessionValTokens[Util.DISCARD_TIME])
+								+ "<br>");
 
 						Iterator<String> itr = serverInstance.mbrSet.iterator();
-						pWriter.println("\nMBR Set:\n");
+						pWriter.println("MBR Set:" + "<br>");
 						while(itr.hasNext())
-							pWriter.println(itr.next() + "\n");
+							pWriter.println(itr.next() + "<br>");
 
-						pWriter.println(additionalData);
+						pWriter.println(additionalData + "</body>\n"
+								+ "</html>");
+
 					}
 				}
 			}else{
@@ -473,30 +536,35 @@ public class SessionManagement extends HttpServlet {
 						+ "</ul>\n"
 						+ "</fieldset>\n"
 						+ "<p>Server IP and Port is:: "
-						+ req.getLocalAddr()
+						+ RpcServerStub.getInstance(serverInstance)
+								.get_serverAddress().getHostAddress()
 						+ ":"
 						+ RpcServerStub.getInstance(serverInstance)
 								.get_serverPort()
-						+ "</p>\n"
-						+ "</FORM>\n"
-						+ "</body>\n" + "</html>");
-				if( !Util.isIppMine(currCookie,getIPP(req))){
-					// print the ipp of the primary and backup
-					pWriter.println("\nIPP-Primary: "
-							+ (Util.getPrimaryIpp(currCookie))
-							+ " IPP-Backup: " + (Util.getBackupIpp(currCookie)));
+						+ "\n"
+						+ "Instance ID : "
+						+ Util.retrieveInstanceId() + "</p>\n" + "</FORM>\n");
+				if(serverInstance.IPP_FLAG){
+					pWriter.println("Cookie found in the cache" + "<br>");
 				}else{
-					pWriter.println("\nCookie found in the cache");
+					// print the ipp of the server that we got the session info
+					// from
+					if( !serverInstance.ipReceived.equalsIgnoreCase(""))
+						pWriter.println("IPP received the info from: "
+								+ serverInstance.ipReceived + "<br>");
+					else
+						pWriter.println("New cookie created" + "<br>");
 				}
-				pWriter.println("\nExpiration Time: "
-						+ (sessionValTokens[Util.EXPIRATION_TIME]) + "\n");
-				pWriter.println("\nDiscard Time: "
-						+ (sessionValTokens[Util.DISCARD_TIME]) + "\n");
+				pWriter.println("Expiration Time: "
+						+ (sessionValTokens[Util.EXPIRATION_TIME]));
+				pWriter.println("  Discard Time: "
+						+ (sessionValTokens[Util.DISCARD_TIME]) + "<br>");
 
 				Iterator<String> itr = serverInstance.mbrSet.iterator();
-				pWriter.println("MBR Set:\n");
+				pWriter.println("MBR Set:" + "<br>");
 				while(itr.hasNext())
-					pWriter.println(itr.next() + "\n");
+					pWriter.println(itr.next() + "<br>");
+				pWriter.println("</body>\n" + "</html>");
 
 			}
 		}catch(IOException e){
@@ -536,10 +604,6 @@ public class SessionManagement extends HttpServlet {
 	 */
 	public Cookie createCookie(HttpServletResponse resp,HttpServletRequest req){
 		String sessionID = createSessionState(req);
-
-		// TODO: write apis to parse the data
-		// TODO: need to get the backup and primary IPPs
-
 		// Cookie value - sessionID_version_location
 		String location = getIPP(req);
 
@@ -566,7 +630,6 @@ public class SessionManagement extends HttpServlet {
 	 * @return
 	 */
 	protected String createSessionState(HttpServletRequest req){
-		// TODO: change all the _ to ._
 		Calendar calTimeOut = Calendar.getInstance();
 		calTimeOut.add(Calendar.SECOND,
 				ServerSingleton.CONST_INT_SESSION_TIMEOUT_VAL);
@@ -586,7 +649,6 @@ public class SessionManagement extends HttpServlet {
 						+ Util.DELIM + calTimeOut.getTime().toString()
 						+ Util.DELIM + calDiscardTime.getTime().toString();
 		serverInstance.sessionInfoCMap.put(sessionID,sessionValue);
-		System.out.println("here - " + sessionID + ":" + sessionValue);
 		return sessionID;
 	}
 
@@ -599,7 +661,8 @@ public class SessionManagement extends HttpServlet {
 	private String getIPP(HttpServletRequest req){
 		String IPP = "";
 		IPP =
-				req.getLocalAddr()
+				RpcServerStub.getInstance(serverInstance).get_serverAddress()
+						.getHostAddress()
 						+ Util.DELIM
 						+ RpcServerStub.getInstance(serverInstance)
 								.get_serverPort();

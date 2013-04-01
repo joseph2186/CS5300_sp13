@@ -10,6 +10,8 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 
 public class RpcClientStub {
@@ -19,8 +21,17 @@ public class RpcClientStub {
 	private OperationCode _opCode = null;
 	private String _data = "";
 	private int _callId = 0;
-	// Fix - ?
 	private String _senderRpcServerInet = "";
+	private InetAddress _ipReceived = null;
+	private int _portReceived = 0;
+
+	public int get_portReceived(){
+		return _portReceived;
+	}
+
+	public InetAddress get_ipReceived(){
+		return _ipReceived;
+	}
 
 	public RpcClientStub (OperationCode opCode, int callId, String[] ippList,
 			String data, String senderRpcServerInet){
@@ -43,11 +54,12 @@ public class RpcClientStub {
 		ServerSingleton.InBuf obj = null;
 		String[] tokens = null;
 		DatagramSocket rpcSocket = null;
+		ServerSingleton serverInstance = ServerSingleton.getInstance();
 
 		try{
 			rpcSocket = new DatagramSocket();
 			// TODO: check the time out value
-			rpcSocket.setSoTimeout(0);
+			rpcSocket.setSoTimeout(serverInstance.CONST_SOCKET_TIMEOUT_VAL);
 			inBuf.setCallId(_callId);
 			inBuf.setOpCode(_opCode);
 			inBuf.setData(_data);
@@ -59,8 +71,6 @@ public class RpcClientStub {
 
 			// the ippList is populated as string pairs IP_Port
 			for(int i = 0;i < _ippList.length;i = i + 2){
-				// System.out.println("SENDING___" + _ippList[i]);
-				// System.out.println("AND____" + _ippList[i+1]);
 				if(Util.isNullIPP(_ippList[i],_ippList[i + 1])){
 					continue;
 				}
@@ -77,9 +87,9 @@ public class RpcClientStub {
 				_recvPkt.setLength(inBufBytes.length);
 				try{
 					rpcSocket.receive(_recvPkt);
+					_ipReceived = _recvPkt.getAddress();
+					_portReceived = _recvPkt.getPort();
 				}catch(SocketTimeoutException e){
-					// TODO : we need to return null here but have
-					// to change logic at places this is getting called
 					e.printStackTrace();
 					return null;
 				}
@@ -105,9 +115,7 @@ public class RpcClientStub {
 		}catch(IOException e){
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		// Fix - March 31
-		finally{
+		}finally{
 			rpcSocket.close();
 		}
 		return tokens;

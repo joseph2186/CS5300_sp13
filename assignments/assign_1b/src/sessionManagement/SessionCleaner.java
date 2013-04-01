@@ -16,7 +16,6 @@ public class SessionCleaner extends Thread {
 
 	@Override
 	public void run(){
-		// TODO: add the functionality for the discard time logic
 		while(true){
 			Calendar cal = Calendar.getInstance();
 			Date timeVal = new Date();

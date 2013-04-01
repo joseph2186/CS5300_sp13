@@ -2,6 +2,7 @@ package sessionManagement;
 
 import java.io.Serializable;
 import java.net.DatagramSocket;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,10 +19,13 @@ public class ServerSingleton implements Serializable {
 	public static final String CONST_STR_COOKIE_NAME = "CS5300PROJ1SESSION";
 	// seconds
 	public static final int CONST_INT_SESSION_TIMEOUT_VAL = 60;
+	public static final int CONST_SOCKET_TIMEOUT_VAL = 10000;
 	public static final String CONST_STR_DEF_MSG_HELLO_USER = "Hello User!";
 	public static final String CONST_STRING_SDF_FORMAT =
 			"EEE MMM dd HH:mm:ss zzz yyyy";
-	public static final int CONST_CRASH_TIME_MS = 10000;
+
+	// the timeout for the crash is set to 10 minutes
+	public static final int CONST_CRASH_TIME_MS = 1000 * 60 * 10;
 
 	private static int _sessionNumber = 0;
 	private static int _callId = 0;
@@ -30,13 +34,16 @@ public class ServerSingleton implements Serializable {
 	public static int CONST_DELTA_TIMEOUT_VAL = 200;
 	public static int CONST_GAMMA_TIMEOUT_VAL = 100;
 
+	public static boolean CRASH_FLAG = true;
+
 	private static DatagramSocket rpcSocket = null;
+	public static String ipReceived = "";
+	public static boolean IPP_FLAG = false;
 
 	public class InBuf implements Serializable {
 		OperationCode opCode;
 		int callId;
 		String data = "";
-		// Fix -? March 31
 		String senderRpcINetAddress;
 
 		public String getSenderRpcINetAddress(){
@@ -72,23 +79,23 @@ public class ServerSingleton implements Serializable {
 		}
 	}
 
-	public static DatagramSocket getRpcSocket(){
+	public synchronized static DatagramSocket getRpcSocket(){
 		return rpcSocket;
 	}
 
-	public static void setRpcSocket(DatagramSocket rpcSocket){
+	public synchronized static void setRpcSocket(DatagramSocket rpcSocket){
 		ServerSingleton.rpcSocket = rpcSocket;
 	}
 
-	public static int get_callId(){
+	public synchronized static int get_callId(){
 		return _callId;
 	}
 
-	public static void set_callId(int _callId){
+	public synchronized static void set_callId(int _callId){
 		ServerSingleton._callId = _callId;
 	}
 
-	public static int getNextCallId(){
+	public synchronized static int getNextCallId(){
 		_callId = _callId + 1;
 		return _callId;
 	}
@@ -97,7 +104,7 @@ public class ServerSingleton implements Serializable {
 		return sessionInfoCMap;
 	}
 
-	public static void setSessionInfo(Map<String,String> sessionInfo){
+	public synchronized static void setSessionInfo(Map<String,String> sessionInfo){
 		ServerSingleton.sessionInfoCMap = sessionInfo;
 	}
 
@@ -105,15 +112,15 @@ public class ServerSingleton implements Serializable {
 		return mbrSet;
 	}
 
-	public static void setMbrSet(Vector<String> mbrSet){
+	public synchronized static void setMbrSet(Vector<String> mbrSet){
 		ServerSingleton.mbrSet = mbrSet;
 	}
 
-	public static int get_sessionNumber(){
+	public synchronized static int get_sessionNumber(){
 		return _sessionNumber;
 	}
 
-	public static void set_sessionNumber(int _sessionNumber){
+	public synchronized static void set_sessionNumber(int _sessionNumber){
 		ServerSingleton._sessionNumber = _sessionNumber;
 	}
 
