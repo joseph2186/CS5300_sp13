@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -19,7 +20,8 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
     HashMap<Integer, ArrayList<Double>> bcDataMap = new HashMap<Integer, ArrayList<Double>>();
     HashMap<Integer, Double> nprMap = new HashMap<Integer, Double>();
     HashMap<Integer, MetadataValue> mdMap = new HashMap<Integer, MetadataValue>();
-    HashSet<Integer> setOfNodes = new HashSet<Integer>();
+    HashMap<Integer, Double> nodesPrMap = new HashMap<Integer, Double>();
+//    HashSet<Integer> setOfNodes = new HashSet<Integer>();
 
     @Override
     protected void reduce(Text key, Iterable<Text> values, Context context)
@@ -58,7 +60,8 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
                 }
             } else {
                 Integer v = Integer.parseInt(lineTokens[0]);
-                setOfNodes.add(v);
+//                setOfNodes.add(v);
+                nodesPrMap.put(v, Double.parseDouble(lineTokens[1]));
                 mDV = new MetadataValue(lineStr);
                 mdMap.put(v, mDV);
             }
@@ -68,13 +71,29 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
         // Logic!!?
         double residual = 0;
         int counter = 0;
-        do {
-            residual = iterateBlockOnce();
+
+        //First iteration
+        residual = iterateBlockOnce(context);
+//        residual = (double) (residual / (double) setOfNodes.size());
+        residual = (double) (residual / (double) nodesPrMap.size());
+        while (Double.compare(residual, CONST_DOUBLE_THRESHOLD) > 0
+                && counter < CONST_INT_NO_OF_ITERATIONS) {
+            residual = iterateBlockOnce(null);
             ++counter;
-            residual = (double) (residual / (double) setOfNodes.size());
+            residual = (double) (residual / (double) nodesPrMap.size());
 //			System.out.println("residual after division-->"+residual);
-        } while (Double.compare(residual, CONST_DOUBLE_THRESHOLD) > 0
-                && counter < CONST_INT_NO_OF_ITERATIONS);
+        }
+        
+        
+        //Calculate block level residual
+        residual = 0d;
+        for(Entry entry : nodesPrMap.entrySet()){
+            Integer v = (Integer) entry.getKey();
+            Double oldPr = (Double) entry.getValue();
+            residual += calculateResidual(oldPr, mdMap.get(v).getPageRankAsDouble());
+        }
+        residual = residual/((double)nodesPrMap.size());
+        
         Long residualLong = (long) (residual * 10000);
         context.getCounter(PAGE_RANK_COUNTER.RESIDUAL).increment(residualLong);
 
@@ -94,10 +113,10 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
         cleanup(context);
     }
 
-    private double iterateBlockOnce() {
+    private double iterateBlockOnce(Context context) {
         double residual = 0d;
         nprMap = new HashMap<Integer, Double>();
-        for (Integer v : setOfNodes) {
+        for (Integer v : nodesPrMap.keySet()){//setOfNodes) {
             nprMap.put(v, 0d);
             ArrayList<Integer> list = BEMap.get(v);
             //bug fix
@@ -125,8 +144,14 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 
             //Perform
             MetadataValue mdValueV = mdMap.get(v);
-            
+
             residual += mdValueV.getResidue(newPR);
+
+//            if (null != context && bcDataMap.containsKey(v)) {
+//                Long residualLong = (long) (residual * 10000);
+//                context.getCounter(PAGE_RANK_COUNTER.BLOCK_EDGE_CONVERGENCE).increment(residualLong);
+//                context.getCounter(PAGE_RANK_COUNTER.EDGE_NODES_COUNT).increment(residualLong);
+//            }
 
             // we do it here since we need the old value in the above
             // computation
@@ -134,5 +159,9 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
         }
 //		System.out.println("residual->"+residual);
         return residual;
+    }
+    
+    private double calculateResidual(double oldPr , double newPr){
+        return Math.abs(oldPr - newPr)/newPr;
     }
 }
