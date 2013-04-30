@@ -1,6 +1,0 @@
-
-public enum PAGE_RANK_COUNTER {
-	RESIDUAL,
-        BLOCK_EDGE_CONVERGENCE,
-        EDGE_NODES_COUNT
-}
