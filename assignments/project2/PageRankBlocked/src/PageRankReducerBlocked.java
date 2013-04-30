@@ -83,17 +83,17 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
             residual = (double) (residual / (double) nodesPrMap.size());
 //			System.out.println("residual after division-->"+residual);
         }
-        
-        
+
+
         //Calculate block level residual
         residual = 0d;
-        for(Entry entry : nodesPrMap.entrySet()){
+        for (Entry entry : nodesPrMap.entrySet()) {
             Integer v = (Integer) entry.getKey();
             Double oldPr = (Double) entry.getValue();
             residual += calculateResidual(oldPr, mdMap.get(v).getPageRankAsDouble());
         }
-        residual = residual/((double)nodesPrMap.size());
-        
+        residual = residual / ((double) nodesPrMap.size());
+
         Long residualLong = (long) (residual * 10000);
         context.getCounter(PAGE_RANK_COUNTER.RESIDUAL).increment(residualLong);
 
@@ -116,16 +116,19 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
     private double iterateBlockOnce(Context context) {
         double residual = 0d;
         nprMap = new HashMap<Integer, Double>();
-        for (Integer v : nodesPrMap.keySet()){//setOfNodes) {
+        for (Integer v : nodesPrMap.keySet()) {//setOfNodes) {
             nprMap.put(v, 0d);
             ArrayList<Integer> list = BEMap.get(v);
             //bug fix
             if (list != null) {
                 for (Integer u : list) {
-                    double newPR = mdMap.get(u).getPageRankAsDouble()
-                            / (double) mdMap.get(u).getOutdegree();
-                    newPR += nprMap.get(v);
-                    nprMap.put(v, newPR);
+                    try {
+                        double newPR = mdMap.get(u).getPageRankAsDouble()
+                                / (double) mdMap.get(u).getOutdegree();
+                        newPR += nprMap.get(v);
+                        nprMap.put(v, newPR);
+                    } catch (Exception ex) {
+                    }
                 }
             }
 
@@ -160,8 +163,8 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 //		System.out.println("residual->"+residual);
         return residual;
     }
-    
-    private double calculateResidual(double oldPr , double newPr){
-        return Math.abs(oldPr - newPr)/newPr;
+
+    private double calculateResidual(double oldPr, double newPr) {
+        return Math.abs(oldPr - newPr) / newPr;
     }
 }
