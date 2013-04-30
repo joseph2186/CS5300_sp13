@@ -4,11 +4,11 @@ import java.util.Iterator;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Reducer.Context;
 
 
-public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
-
-    @Override
+public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text>{
+	@Override
     protected void reduce(Text key, Iterable<Text> values, 
             Context context)
             throws IOException, InterruptedException {
@@ -18,7 +18,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
         Double pageRank = (Double) 0.0;
         Double oldPageRank = (Double) 0.0;
         Double residual = (Double) 0.0;
-        Double threshold = (Double) 0.001;
+        Double threshold = (Double) 0.01;
         ArrayList<String> edgeList = new ArrayList<String>();
         String output = "";
         
@@ -36,25 +36,29 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
             }
             
         }
+        if (Double.compare(pageRank, threshold) > 1){
+        	residual = (oldPageRank - pageRank)/pageRank;
+        } else {
+        	//System.out.println("error!!!");
+        }
+        if (Double.compare(threshold, residual) > 1){
+        	//System.out.println("converged!!");
+        	pageRank = oldPageRank;
+        }
         
-        //calculate the new page rank
-        pageRank = ((1.0 - 0.85)/685229.0) + (0.85)*pageRank;
-        residual = Math.abs((oldPageRank - pageRank)/pageRank);
-        
-    	Long residualCount = (long) (residual * 10000);
-    	context.getCounter(PAGE_RANK_COUNTER.RESIDUAL).increment(residualCount);
-        
+        //TODO: check if this condition is correct
         if (edgeList.size() > 0) {
         	edgeList.remove(0);
         }
         edgeList.add(0, new String(String.valueOf(pageRank)));
-        
         for (int i = 0 ; i < edgeList.size() - 1 ; i++){
         	output += edgeList.get(i)+"\t";
         }
         output += edgeList.get(edgeList.size() - 1);
         
         Text outputText = new Text(output);
+        context.getCounter(PAGE_RANK_COUNTER.RESIDUAL).increment(1);
+        //System.out.println("counter-->"+context.getCounter(TEST_COUNTER.COUNTER_1).getValue());
         
         context.write(key, outputText);
         cleanup(context);

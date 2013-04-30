@@ -12,36 +12,45 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, Text>{
     protected void map(LongWritable key, Text value, Context context)
             throws IOException, InterruptedException {
         String line = value.toString();
+        Integer degree = 0;
         String[] words = line.split("\t");
         
-        Integer degree = new Integer(words[2]);
-        Float pageRank = new Float(words[1]);
+        try {
+        	degree = new Integer(words[2]);
+        } catch(ArrayIndexOutOfBoundsException e){
+        	degree = 0;
+        }
+        //get pagerank
+        Double pageRank = new Double(words[1]);
         
+        //set the reducer node
         Text Node = new Text(words[0]);
         
-        if (degree == 0){
-        	pageRank = (float)1.0;
-        } else {
-        	pageRank = (float)pageRank/degree;
-        }
+        //if the outdegree of a node is 0, it does not share its pagerank
+        if (degree != 0){
+        	pageRank = (Double)pageRank/degree;
         
-        Text edgeList = new Text();
-        String tempList = "";
-        for (int i = 1 ; i < words.length -1 ; i++){
-        	tempList += words[i]+" ";
-        }
-        tempList += words[words.length-1];
-        edgeList = new Text(tempList);
-        
-        context.write(Node, edgeList);
-        cleanup(context);
-        Text nodeOut = new Text();
-        Text pageRankText = new Text(String.valueOf(pageRank));
-        for (int i = 3 ; i < words.length ; i++) {
-            nodeOut = new Text(words[i]);
-            context.write(nodeOut, pageRankText);
-            cleanup(context);
-        }
+	        Text edgeList = new Text();
+	        String tempList = "";
+	        for (int i = 1 ; i < words.length -1 ; i++){
+	        	tempList += words[i]+" ";
+	        }
+	        tempList += words[words.length-1];
+	        edgeList = new Text(tempList);
+	        
+	        //The metadata
+	        context.write(Node, edgeList);
+	        cleanup(context);
+	        
+	        //The transaction tuple
+	        Text nodeOut = new Text();
+	        Text pageRankText = new Text(String.valueOf(pageRank));
+	        for (int i = 3 ; i < words.length ; i++) {
+	            nodeOut = new Text(words[i]);
+	            context.write(nodeOut, pageRankText);
+	            cleanup(context);
+	        }
+	    }
     }
 
 }
