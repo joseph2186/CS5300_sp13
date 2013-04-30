@@ -122,12 +122,12 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
             //bug fix
             if (list != null) {
                 for (Integer u : list) {
-                    try {
+                    int outDegree = mdMap.get(u).getOutdegree();
+                    if (outDegree != 0) {
                         double newPR = mdMap.get(u).getPageRankAsDouble()
-                                / (double) mdMap.get(u).getOutdegree();
+                                / (double) outDegree;
                         newPR += nprMap.get(v);
                         nprMap.put(v, newPR);
-                    } catch (Exception ex) {
                     }
                 }
             }
