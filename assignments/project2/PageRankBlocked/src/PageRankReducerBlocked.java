@@ -62,8 +62,12 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 		do {
 			residual = iterateBlockOnce();
 			++counter;
+			residual = (double)(residual / (double)setOfNodes.size());
+//			System.out.println("residual after division-->"+residual);
 		} while (Double.compare(residual, CONST_DOUBLE_THRESHOLD) > 0
 				&& counter < CONST_INT_NO_OF_ITERATIONS);
+		Long residualLong = (long) (residual * 10000);
+		context.getCounter(PAGE_RANK_COUNTER.RESIDUAL).increment(residualLong);
 
 		String output = "";
 		Text outputTextVal = null;
@@ -71,6 +75,8 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 
 		for (MetadataValue mdv : mdMap.values()) {
 			output = mdv.toString();
+//			System.out.println("key-->"+mdv.getNodeID());
+//			System.out.println("output-->"+output);
 			outputTextVal = new Text(output);
 			outputTextKey = new Text(mdv.getNodeID());
 			context.write(outputTextKey, outputTextVal);
@@ -84,17 +90,25 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 		nprMap = new HashMap<String, Double>();
 		for (String v : setOfNodes) {
 			nprMap.put(v, 0d);
-			for (String u : BEMap.get(v)) {
-				double newPR = mdMap.get(u).getPageRankAsDouble()
-						/ (double) mdMap.get(u).getOutdegree();
-				newPR += nprMap.get(v);
-				nprMap.put(v, newPR);
+			ArrayList<String> list = BEMap.get(v);
+			//bug fix
+			if (list != null) {
+				for (String u : BEMap.get(v)) {
+					double newPR = mdMap.get(u).getPageRankAsDouble()
+							/ (double) mdMap.get(u).getOutdegree();
+					newPR += nprMap.get(v);
+					nprMap.put(v, newPR);
+				}
 			}
 
-			for (BCData bcd : bcDataMap.get(v)) {
-				double newPR = bcd.getR();
-				newPR += nprMap.get(v);
-				nprMap.put(v, newPR);
+			//bug fix
+			ArrayList<BCData> bcdList = bcDataMap.get(v);
+			if (bcdList != null) {
+				for (BCData bcd : bcDataMap.get(v)) {
+					double newPR = bcd.getR();
+					newPR += nprMap.get(v);
+					nprMap.put(v, newPR);
+				}
 			}
 			double newPR = CONST_DOUBLE_DAMPING_FACTOR * nprMap.get(v)
 					+ (1d - CONST_DOUBLE_DAMPING_FACTOR) / CONST_TOTAL_NODES;
@@ -106,6 +120,7 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 			// computation
 			mdMap.get(v).setPageRankFromDouble(newPR);
 		}
+//		System.out.println("residual->"+residual);
 		return residual;
 	}
 }

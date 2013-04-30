@@ -31,11 +31,13 @@ public class MetadataValue {
 	}
 
 	public void setPageRank(String pageRank) {
+		this.pageRank = "";
 		this.pageRank = pageRank;
 	}
 
 	public void setPageRankFromDouble(double prDouble)
 	{
+		this.pageRank = "";
 		this.pageRank = String.valueOf(prDouble);
 	}
 	

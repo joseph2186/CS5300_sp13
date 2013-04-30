@@ -15,21 +15,24 @@ import org.apache.hadoop.mapreduce.Mapper.Context;
 public class PageRankMapperBlocked extends
 		Mapper<LongWritable, Text, Text, Text> {
 	private Text word = new Text();
-	private HashMap<String, String> BlockMap = null;
+	private static HashMap<String, String> BlockMap = new HashMap<String, String>();
 	String delimiter = "\t";
 	
-	private void blockMapper(){
+//	private void blockMapper(){
+	static {
 		try {
+			System.out.println("block mapper enter!");
 			FileInputStream fis = new FileInputStream("/home/joe/nodes.txt");
 			DataInputStream dis = new DataInputStream(fis);
 			BufferedReader bufRead = new BufferedReader(new InputStreamReader(dis));
 			String line = "";
 			while((line = bufRead.readLine()) != null){
+				line = line.trim();
 				String formatted = line.replaceAll("[ ]+", ";");
 				String[] tokens = formatted.split(";");
 				//tokens[1] : node
 				//tokens[2] : block
-				BlockMap.put(tokens[1], tokens[2]);
+				BlockMap.put(tokens[0], tokens[1]);
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -44,6 +47,9 @@ public class PageRankMapperBlocked extends
 		String line = value.toString();
 		String[] words = line.split("\t");
 
+		//TODO: need to move it to run once
+//		blockMapper();
+		
 		//degree and pagerank
 		Integer degree = 0;
 		try {
@@ -61,7 +67,7 @@ public class PageRankMapperBlocked extends
 
 			Text edgeList = new Text();
 			String tempList = "";
-			for (int i = 1; i < words.length - 1; i++) {
+			for (int i = 0; i < words.length - 1; i++) {
 				tempList += words[i] + delimiter;
 			}
 			tempList += words[words.length - 1];
