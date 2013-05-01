@@ -18,7 +18,7 @@ public class PageRank {
         String output = "/home/joe/output";
         Counter  c= null;
         int count = 0;
-        Double residual = 0.0;
+        Double residual = 1.0;
         
         while(Double.compare(residual, threshold) > 0) {
         //while(count < 5) {
