@@ -3,10 +3,13 @@ package PageRankBlocked;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -19,7 +22,7 @@ public class PageRankMapperBlocked extends
 	String delimiter = "\t";
 	private static String nodePath = "s3n://edu-cornell-cs-cs5300s13-jkb243-pagerank/nodes.txt";
 	private static String nodePathLocal = "/home/joe/nodes.txt";
-	private static boolean EXTRA_CREDIT_FLAG = false;
+	private static boolean EXTRA_CREDIT_FLAG = true;
 	private static String dummyList = "-1";
 	private static Integer TOTAL_NODES = 685229;
 	private static Integer RANDOM = 100;
@@ -34,6 +37,7 @@ public class PageRankMapperBlocked extends
 			474196, 484050, 493968, 503752, 514131, 524510, 534709, 545088,
 			555467, 565846, 576225, 586604, 596585, 606367, 616148, 626448,
 			636240, 646022, 655804, 665666, 675448, 685230 };
+	private static Long blockCount = (long) 0;
 
 	private static int getBlockIdForNode(int[] nodesArray, int nodeId) {
 		int low = 0;
@@ -67,13 +71,15 @@ public class PageRankMapperBlocked extends
 				BlockMap.put(new Integer(i).toString(),
 						new Integer(i % RANDOM).toString());
 			}
+			blockCount = (long) RANDOM;
 
 		} else if (TEST_FLAG == true) {
 			System.out.println("block mapper enter!");
 			for (int i = 0; i <= TOTAL_NODES; i++) {
 				BlockMap.put(new Integer(i).toString(), new Integer(
-						getBlockIdForNode(blockList, i)+1).toString());
+						getBlockIdForNode(blockList, i) + 1).toString());
 			}
+			blockCount = (long) blockList.length;
 
 		} else {
 			try {
@@ -164,5 +170,7 @@ public class PageRankMapperBlocked extends
 			context.write(nodeOut, tupleValue);
 			cleanup(context);
 		}
+		// set the value of the block count
+		context.getCounter(PAGE_RANK_COUNTER.BLOCK_COUNT).setValue(blockCount);
 	}
 }

@@ -1,6 +1,7 @@
 package PageRankBlocked;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,7 +13,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 
-    public static final int CONST_INT_NO_OF_ITERATIONS = 6;
+    public static final int CONST_INT_NO_OF_ITERATIONS = 20;
     public static final double CONST_TOTAL_NODES = 685229.0;
     public static final double CONST_DOUBLE_DAMPING_FACTOR = 0.85;
     public static final String DELIMITER = "\t";
@@ -22,6 +23,11 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
     HashMap<Integer, Double> newPrMapPerIteration = null;
     HashMap<Integer, MetadataValue> mdMap = null;
     HashMap<Integer, Double> initialPassPRMap = null;
+    
+    private static Double roundDoubles(double d) {
+		DecimalFormat twoDForm = new DecimalFormat("#.####");
+		return Double.valueOf(twoDForm.format(d));
+	}
 
     // HashSet<Integer> setOfNodes = new HashSet<Integer>();
     @Override
@@ -73,18 +79,20 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
         // System.out.println("no of metadata entries ="+mdMap.size());
 
         //Fix for border nodes with out degree 0 
-        for (Integer v : bcDataMap.keySet()) {
-            if (!mdMap.containsKey(v)) {
-                initialPassPRMap.put(v, 0.0d);
-                StringBuilder strBuilder = new StringBuilder();
-                strBuilder.append(v).append(DELIMITER);
-                strBuilder.append("0.00").append(DELIMITER);
-                strBuilder.append("0").append(DELIMITER);
-                strBuilder.append("-1").append(DELIMITER);
-                MetadataValue mdV = new MetadataValue(strBuilder.toString());
-                mdMap.put(v, mDV);
-            }
-        }
+//        for (Integer v : bcDataMap.keySet()) {
+//            if (!mdMap.containsKey(v)) {
+//            	Double defaultPR = (1d - CONST_DOUBLE_DAMPING_FACTOR) / CONST_TOTAL_NODES;
+//                initialPassPRMap.put(v, defaultPR);
+//                StringBuilder strBuilder = new StringBuilder();
+//                strBuilder.append(v).append(DELIMITER);
+//                strBuilder.append(defaultPR.toString()).append(DELIMITER);
+//                strBuilder.append("0").append(DELIMITER);
+//                strBuilder.append("-1").append(DELIMITER);
+//                MetadataValue mdV = new MetadataValue(strBuilder.toString());
+//                mdMap.put(v, mDV);
+//                System.out.println("fucked!");
+//            }
+//        }
         
         
         // Calculate new PR values
@@ -95,13 +103,14 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
         //First iteration
         residual = iterateBlockOnce(context);
         // residual = (double) (residual / (double) setOfNodes.size());
-        residual = (double) (residual / (double) initialPassPRMap.size());
-        while (Double.compare(residual, CONST_DOUBLE_THRESHOLD) > 0
-                && counter < CONST_INT_NO_OF_ITERATIONS) {
+        residual = roundDoubles((double) (residual / (double) initialPassPRMap.size()));
+        while (Double.compare(residual, roundDoubles(CONST_DOUBLE_THRESHOLD)) > 0 ) {
+                //&& counter < CONST_INT_NO_OF_ITERATIONS) {
             residual = iterateBlockOnce(null);
             ++counter;
-            residual = (double) (residual / (double) initialPassPRMap.size());
-            // System.out.println("residual after division-->"+residual);
+            residual = roundDoubles((double) (residual / (double) initialPassPRMap.size()));
+            //System.out.println("residual after division-->"+residual);
+            //System.out.println("count-->"+counter);
         }
 
 
@@ -113,10 +122,11 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
             residual += calculateResidual(oldPr,
                     mdMap.get(v).getPageRankAsDouble());
         }
-        residual = residual / ((double) initialPassPRMap.size());
+        //residual = residual / ((double) initialPassPRMap.size());
 
         Long residualLong = (long) (residual * 10000);
         context.getCounter(PAGE_RANK_COUNTER.RESIDUAL).increment(residualLong);
+        context.getCounter(PAGE_RANK_COUNTER.BLOCK_ITERATION).increment((long)counter);
 
         String output = "";
         Text outputTextVal = null;

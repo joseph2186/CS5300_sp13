@@ -1,6 +1,7 @@
 package PageRankBlocked;
 
 import java.io.File;
+import java.text.DecimalFormat;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -12,6 +13,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class PageRankBlocked {
 	private static Double residualThreshold = 0.001;
+
+	private static Double roundDoubles(double d) {
+		DecimalFormat twoDForm = new DecimalFormat("#.####");
+		return Double.valueOf(twoDForm.format(d));
+	}
 
 	public static boolean deleteDirectory(File directory) {
 		if (directory.exists()) {
@@ -36,9 +42,10 @@ public class PageRankBlocked {
 		Counter c = null;
 		int count = 0;
 		Double residual = 1.0;
+		Long blockCount = (long) 0;
 
 		while (Double.compare(residual, residualThreshold) > 0) {
-		//while (count < 1) {
+			// while (count < 1) {
 			// Create a new job
 			Job job = new Job();
 
@@ -50,13 +57,13 @@ public class PageRankBlocked {
 			// format
 			// which is TextInputFormat (each record is a line of input)
 			if (count == 0) {
-				FileInputFormat.addInputPath(job, new Path(input));
+				FileInputFormat.addInputPath(job, new Path(args[1]));
 			} else {
-				FileInputFormat.addInputPath(job, new Path(output + "_"
+				FileInputFormat.addInputPath(job, new Path(args[2] + "_"
 						+ new Integer(count - 1).toString()));
 			}
 
-			FileOutputFormat.setOutputPath(job, new Path(output + "_"
+			FileOutputFormat.setOutputPath(job, new Path(args[2] + "_"
 					+ new Integer(count).toString()));
 
 			// Set Mapper and Reducer class
@@ -72,10 +79,18 @@ public class PageRankBlocked {
 			Counters c1 = job.getCounters();
 			c = c1.findCounter(PAGE_RANK_COUNTER.RESIDUAL);
 			System.out.println("residual-get value-->" + c.getValue());
-			residual = (double) (c.getValue() / (67.0 * 10000.0));
+			blockCount = job.getCounters()
+					.findCounter(PAGE_RANK_COUNTER.BLOCK_COUNT).getValue();
+			Double blockResidual = roundDoubles((double)c.getValue());
+			
+			residual = roundDoubles((double) (blockResidual / (685230.0 * 10000.0)));
 			System.out.println("residual-->" + residual);
 			count++;
 			System.out.println("number of passes-->" + count);
+			System.out.println("Average block iterations-->"
+					+ job.getCounters()
+							.findCounter(PAGE_RANK_COUNTER.BLOCK_ITERATION)
+							.getValue() / blockCount);
 		}
 	}
 }
