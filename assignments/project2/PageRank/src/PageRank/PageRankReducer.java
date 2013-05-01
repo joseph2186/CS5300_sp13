@@ -1,3 +1,4 @@
+package PageRank;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,7 +26,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
         while (itr.hasNext()) {
             input = itr.next();
             String inputStr = input.toString();
-            inputTokens = inputStr.split(" ");
+            inputTokens = inputStr.split("\t");
             if (inputTokens.length == 1){
             	pageRank = pageRank + Double.parseDouble(inputTokens[0]);
             } else {
@@ -39,7 +40,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
         
         //calculate the new page rank
         pageRank = ((1.0 - 0.85)/685229.0) + (0.85)*pageRank;
-        residual = Math.abs((oldPageRank - pageRank)/pageRank);
+        residual = Math.abs((oldPageRank - pageRank))/pageRank;
         
     	Long residualCount = (long) (residual * 10000);
     	context.getCounter(PAGE_RANK_COUNTER.RESIDUAL).increment(residualCount);

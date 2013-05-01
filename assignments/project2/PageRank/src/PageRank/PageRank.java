@@ -1,3 +1,4 @@
+package PageRank;
 import java.io.File;
 
 import org.apache.hadoop.fs.Path;
@@ -10,30 +11,17 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 
 public class PageRank {
-	public static boolean deleteDirectory(File directory) {
-	    if(directory.exists()){
-	        File[] files = directory.listFiles();
-	        if(null!=files){
-	            for(int i=0; i<files.length; i++) {
-	                if(files[i].isDirectory()) {
-	                    deleteDirectory(files[i]);
-	                }
-	                else {
-	                    files[i].delete();
-	                }
-	            }
-	        }
-	    }
-	    return(directory.delete());
-	}
+	private static Double threshold = 0.001;
 	public static void main(String[] args) throws Exception {        
 
         String input = "/home/joe/edges-output.txt";
         String output = "/home/joe/output";
         Counter  c= null;
         int count = 0;
-
-        while(count < 30) {
+        Double residual = 0.0;
+        
+        while(Double.compare(residual, threshold) > 0) {
+        //while(count < 5) {
 	        // Create a new job
 	        Job job = new Job();
 	
@@ -44,11 +32,11 @@ public class PageRank {
 	        // Set input and output Path, note that we use the default input format
 	        // which is TextInputFormat (each record is a line of input)
 	        if(count == 0)
-	        	FileInputFormat.addInputPath(job, new Path(input));
+	        	FileInputFormat.addInputPath(job, new Path(args[1]));
 	        else
-	        	FileInputFormat.addInputPath(job, new Path(output+"_"+new Integer(count-1).toString()));
+	        	FileInputFormat.addInputPath(job, new Path(args[2]+"_"+new Integer(count-1).toString()));
 	        
-	        FileOutputFormat.setOutputPath(job, new Path(output+"_"+new Integer(count).toString()));
+	        FileOutputFormat.setOutputPath(job, new Path(args[2]+"_"+new Integer(count).toString()));
 	
 	        // Set Mapper and Reducer class
 	        job.setMapperClass(PageRankMapper.class);
@@ -65,6 +53,7 @@ public class PageRank {
 	        System.out.println("residual-get value-->"+c.getValue());
 	        System.out.println("residual-->"+(double)(c.getValue()/(685229.0*10000.0)));
 	        count++;
+	        System.out.println("count-->"+count);
         }
     }
 }
