@@ -37,8 +37,8 @@ public class PageRankBlocked {
 		int count = 0;
 		Double residual = 1.0;
 
-		//while (Double.compare(residual, residualThreshold) > 0) {
-		while (count < 1) {
+		while (Double.compare(residual, residualThreshold) > 0) {
+		//while (count < 1) {
 			// Create a new job
 			Job job = new Job();
 
