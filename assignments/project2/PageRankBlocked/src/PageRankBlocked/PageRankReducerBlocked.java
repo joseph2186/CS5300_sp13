@@ -145,7 +145,11 @@ public class PageRankReducerBlocked extends Reducer<Text, Text, Text, Text> {
 				for (Integer u : list) {
 					int outDegree = mdMap.get(u).getOutdegree();
 					if (outDegree != 0) {
-						double newPR = mdMap.get(u).getPageRankAsDouble()
+                                                double prU = mdMap.get(u).getPageRankAsDouble();
+                                                if(newPrMapPerIteration.containsKey(u)){
+                                                    prU = newPrMapPerIteration.get(u);
+                                                }
+						double newPR = prU
 								/ (double) outDegree;
 						newPR += newPrMapPerIteration.get(v);
 						newPrMapPerIteration.remove(v);

@@ -3,13 +3,10 @@ package PageRankBlocked;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.DecimalFormat;
 import java.util.HashMap;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -172,6 +169,6 @@ public class PageRankMapperBlocked extends
 			cleanup(context);
 		}
 		// set the value of the block count
-		context.getCounter(PAGE_RANK_COUNTER.BLOCK_COUNT).setValue(blockCount);
+//		context.getCounter(PAGE_RANK_COUNTER.BLOCK_COUNT).setValue(blockCount);
 	}
 }
