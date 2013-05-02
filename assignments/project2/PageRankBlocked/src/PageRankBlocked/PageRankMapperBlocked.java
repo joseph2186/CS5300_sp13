@@ -22,12 +22,12 @@ public class PageRankMapperBlocked extends
 	String delimiter = "\t";
 	private static String nodePath = "s3n://edu-cornell-cs-cs5300s13-jkb243-pagerank/nodes.txt";
 	private static String nodePathLocal = "/home/joe/nodes.txt";
-	private static boolean EXTRA_CREDIT_FLAG = true;
+	private static boolean EXTRA_CREDIT_FLAG = false;
 	private static String dummyList = "-1";
 	private static Integer TOTAL_NODES = 685229;
 	private static Integer RANDOM = 100;
 
-	private static boolean TEST_FLAG = true;
+	private static boolean TEST_FLAG = false;
 	private static int[] blockList = { 10328, 20373, 30629, 40645, 50462,
 			60841, 70591, 80118, 90497, 100501, 110567, 120945, 130999, 140574,
 			150953, 161332, 171154, 181514, 191625, 202004, 212383, 222762,
@@ -43,7 +43,7 @@ public class PageRankMapperBlocked extends
 		int low = 0;
 		int high = nodesArray.length - 1;
 		int mid = (low + high) / 2;
-		if (nodeId <= nodesArray[0]) {
+		if (nodeId < nodesArray[0]) {
 			return 0;
 		}
 		while (true) {
@@ -97,6 +97,7 @@ public class PageRankMapperBlocked extends
 					// tokens[2] : block
 					BlockMap.put(tokens[0], tokens[1]);
 				}
+				blockCount = (long) 68;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -36,9 +36,6 @@ public class PageRankBlocked {
 	}
 
 	public static void main(String[] args) throws Exception {
-
-		String input = "/home/joe/edges-output.txt";
-		String output = "/home/joe/output_residual";
 		Counter c = null;
 		int count = 0;
 		Double residual = 1.0;
@@ -74,23 +71,30 @@ public class PageRankBlocked {
 			job.setOutputKeyClass(Text.class);
 			job.setOutputValueClass(Text.class);
 
-			// System.exit(job.waitForCompletion(true) ? 0 : 1);
 			job.waitForCompletion(true);
-			Counters c1 = job.getCounters();
-			c = c1.findCounter(PAGE_RANK_COUNTER.RESIDUAL);
-			System.out.println("residual-get value-->" + c.getValue());
+
 			blockCount = job.getCounters()
 					.findCounter(PAGE_RANK_COUNTER.BLOCK_COUNT).getValue();
-			Double blockResidual = roundDoubles((double)c.getValue());
-			
-			residual = roundDoubles((double) (blockResidual / (685230.0 * 10000.0)));
+
+			System.out.println("block count-->" + blockCount);
+			System.out.println("node count-->"
+					+ job.getCounters()
+							.findCounter(PAGE_RANK_COUNTER.NODE_COUNT)
+							.getValue());
+
+			Double blockResidual = (double) job.getCounters()
+					.findCounter(PAGE_RANK_COUNTER.RESIDUAL).getValue();
+
+			residual = (double) (blockResidual / (job.getCounters()
+					.findCounter(PAGE_RANK_COUNTER.NODE_COUNT).getValue() * 10000.0));
 			System.out.println("residual-->" + residual);
 			count++;
 			System.out.println("number of passes-->" + count);
 			System.out.println("Average block iterations-->"
 					+ job.getCounters()
 							.findCounter(PAGE_RANK_COUNTER.BLOCK_ITERATION)
-							.getValue() / blockCount);
+							.getValue() / 68.0);
+
 		}
 	}
 }
