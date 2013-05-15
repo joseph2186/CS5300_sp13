@@ -6,7 +6,7 @@ public class BCData {
     private int fromNode;
 
     public BCData(String bcDataValue) {
-        String[] values = bcDataValue.split(PageRankReducerBlocked.DELIMITER);
+        String[] values = bcDataValue.split(PageRankReducerGSBlocked.DELIMITER);
         this.R = Double.parseDouble(values[2]);
         this.fromNode = Integer.parseInt(values[0]);
     }

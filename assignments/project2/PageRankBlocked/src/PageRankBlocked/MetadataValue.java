@@ -9,7 +9,7 @@ public class MetadataValue {
     private String listOfNodes;
 
     public MetadataValue(String values) {
-        String[] valuesMinusNode = values.split(PageRankReducerBlocked.DELIMITER, CONST_INT_NODES_SEPARATOR);
+        String[] valuesMinusNode = values.split(PageRankReducerGSBlocked.DELIMITER, CONST_INT_NODES_SEPARATOR);
         this.nodeID = Integer.parseInt(valuesMinusNode[0]);
         this.pageRank = Double.parseDouble(valuesMinusNode[1]);
         this.outdegree = Integer.parseInt(valuesMinusNode[2]);
@@ -46,9 +46,9 @@ public class MetadataValue {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.valueOf(pageRank));
-        sb.append(PageRankReducerBlocked.DELIMITER);
+        sb.append(PageRankReducerGSBlocked.DELIMITER);
         sb.append(outdegree);
-        sb.append(PageRankReducerBlocked.DELIMITER);
+        sb.append(PageRankReducerGSBlocked.DELIMITER);
         sb.append(getListOfNodes());
         return sb.toString();
     }

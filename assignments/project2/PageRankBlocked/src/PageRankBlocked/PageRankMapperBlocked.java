@@ -10,7 +10,6 @@ import java.util.HashMap;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Mapper.Context;
 
 public class PageRankMapperBlocked extends
 		Mapper<LongWritable, Text, Text, Text> {
@@ -19,9 +18,9 @@ public class PageRankMapperBlocked extends
 	String delimiter = "\t";
 	private static String nodePath = "s3n://edu-cornell-cs-cs5300s13-jkb243-pagerank/nodes.txt";
 	private static String nodePathLocal = "/home/joe/nodes.txt";
-	private static boolean EXTRA_CREDIT_FLAG = false;
+	private static boolean EXTRA_CREDIT_FLAG = true;
 	private static String dummyList = "-1";
-	private static Integer TOTAL_NODES = 685229;
+	private static Integer TOTAL_NODES = 685230;
 	private static Integer RANDOM = 100;
 
 	private static boolean TEST_FLAG = false;
@@ -118,13 +117,13 @@ public class PageRankMapperBlocked extends
 		} catch (ArrayIndexOutOfBoundsException e) {
 			degree = 0;
 		}
-		Float pageRank = new Float(words[1]);
+		Double pageRank = new Double(words[1]);
 
 		// source node
 		String source = words[0];
 
 		if (degree != 0) {
-			pageRank = (float) pageRank / degree;
+			pageRank = (double) pageRank / degree;
 
 			Text edgeList = new Text();
 			String tempList = "";
@@ -169,6 +168,6 @@ public class PageRankMapperBlocked extends
 			cleanup(context);
 		}
 		// set the value of the block count
-//		context.getCounter(PAGE_RANK_COUNTER.BLOCK_COUNT).setValue(blockCount);
+		// context.getCounter(PAGE_RANK_COUNTER.BLOCK_COUNT).setValue(blockCount);
 	}
 }
